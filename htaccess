@@ -1,0 +1,20 @@
+# Serve static files
+Alias /static /home/beshegercom/gojodjango/staticfiles
+<Directory /home/beshegercom/gojodjango/staticfiles>
+    Require all granted
+</Directory>
+
+# Serve media files
+Alias /media /home/beshegercom/gojodjango/media
+<Directory /home/beshegercom/gojodjango/media>
+    Require all granted
+</Directory>
+
+# Enable Passenger (Python app server)
+PassengerEnabled On
+PassengerAppRoot /home/beshegercom/gojodjango
+PassengerPython /home/beshegercom/virtualenv/gojodjango/3.11/bin/python3.11_bin
+PassengerStartupFile server.py
+
+# Optional: disable directory listing
+Options -Indexes
