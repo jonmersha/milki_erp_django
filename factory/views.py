@@ -17,12 +17,12 @@ from rest_framework.exceptions import ValidationError
 
 
 
-from django.http import HttpResponse
-from django.views import View
+# from django.http import HttpResponse
+# from django.views import View
 
-from django.contrib.auth import get_user_model
+# from django.contrib.auth import get_user_model
 
-User = get_user_model()  # uses your custom core.User
+# User = get_user_model()  # uses your custom core.User
 
 # class CreateAdminUserView(View):
 #     def get(self, request, *args, **kwargs):
