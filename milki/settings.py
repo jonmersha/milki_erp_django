@@ -6,7 +6,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = False
+DEBUG = True
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -15,8 +15,8 @@ SECRET_KEY = 'django-insecure-nr0t&gitkib8ayb3m+$!7*(&7%vjyo6qj^1rza6a55@j@x=d(d
 
 # SECURITY WARNING: don't run with debug turned on in production!
 ALLOWED_HOSTS = [
-    'gojo.besheger.com',
-    'www.gojo.besheger.com',
+    'm.besheger.com',
+    'www.m.besheger.com',
     'localhost',
     '127.0.0.1',
      '::1' # optional if you also use the www subdomain
