@@ -6,7 +6,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+DEBUG = False
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -22,12 +22,14 @@ ALLOWED_HOSTS = [
      '::1' # optional if you also use the www subdomain
 ]
 
+# ALLOWED_HOSTS = []
+
 
 
 
 # Media files (user uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'  # Where uploaded images will be stored
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = BASE_DIR / 'media'  # Where uploaded images will be stored
 
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -86,10 +88,10 @@ WSGI_APPLICATION = 'milki.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'milki4',
         'HOST': 'localhost',
-        'USER': 'pip',
+        'USER': 'storeuser',
         'PASSWORD': 'Yohannes@123321'
     }
 }
@@ -128,7 +130,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
