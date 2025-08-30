@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 import debug_toolbar
 
-from factory.views import CreateAdminUserView
+# from factory.views import CreateAdminUserView
 
 
 admin.site.site_header = 'Storefront Admin'
