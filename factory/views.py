@@ -20,16 +20,28 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 
 
-def create_admin_user(request):
-    username = "milkiadmin"
-    email = "milkiadmin@gmail.com"
-    password = "Yohannes@123321"
+from django.http import HttpResponse
+from django.views import View
+from django.contrib.auth.models import User
 
-    if User.objects.filter(username=username).exists():
-        return HttpResponse("Admin user already exists.")
 
-    User.objects.create_superuser(username=username, email=email, password=password)
-    return HttpResponse("Admin user created successfully.")
+class CreateAdminUserView(View):
+    def get(self, request, *args, **kwargs):
+        token = request.GET.get("token")
+
+        # simple security check
+        if token != "MY_SECRET_KEY":
+            return HttpResponse("Unauthorized", status=401)
+
+        username = "admin"
+        email = "admin@gmail.com"
+        password = "Yohannes@hira123321"
+
+        if User.objects.filter(username=username).exists():
+            return HttpResponse("Admin user already exists.")
+
+        User.objects.create_superuser(username=username, email=email, password=password)
+        return HttpResponse("Admin user created successfully.")
 
 
 class CustomerViewSet(ModelViewSet):

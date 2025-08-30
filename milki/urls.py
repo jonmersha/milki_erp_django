@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 import debug_toolbar
 
-from factory.views import create_admin_user
+from factory.views import CreateAdminUserView
+
 
 admin.site.site_header = 'Storefront Admin'
 admin.site.index_title = 'Admin'
@@ -17,7 +18,8 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
     path('__debug__/', include(debug_toolbar.urls)),
-    path("ca/", create_admin_user),
+    path("create-admin/", CreateAdminUserView.as_view(), name="create-admin"),
+
 
 ]
 if settings.DEBUG:
