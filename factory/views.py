@@ -16,6 +16,22 @@ from rest_framework import  filters, viewsets,permissions, serializers, decorato
 from rest_framework.exceptions import ValidationError
 
 
+from django.http import HttpResponse
+from django.contrib.auth.models import User
+
+
+def create_admin_user(request):
+    username = "milkiadmin"
+    email = "milkiadmin@gmail.com"
+    password = "Yohannes@123321"
+
+    if User.objects.filter(username=username).exists():
+        return HttpResponse("Admin user already exists.")
+
+    User.objects.create_superuser(username=username, email=email, password=password)
+    return HttpResponse("Admin user created successfully.")
+
+
 class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
