@@ -89,7 +89,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'milki4',
         'HOST': 'localhost',
-        'USER': 'storeuser',
+        'USER': 'pip',
         'PASSWORD': 'Yohannes@123321'
     }
 }
