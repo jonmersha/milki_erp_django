@@ -22,14 +22,9 @@ ALLOWED_HOSTS = [
      '::1' # optional if you also use the www subdomain
 ]
 
-# ALLOWED_HOSTS = []
-
-
-
-
 # Media files (user uploads)
-# MEDIA_URL = '/media/'
-# MEDIA_ROOT = BASE_DIR / 'media'  # Where uploaded images will be stored
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'  # Where uploaded images will be stored
 
 
 CORS_ALLOW_ALL_ORIGINS = True
