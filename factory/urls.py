@@ -19,6 +19,7 @@ router.register('sales-orders', views.SalesOrderViewSet)
 router.register('invoices', views.InvoiceViewSet)
 router.register('payment-methods', views.PaymentMethodViewSet)
 router.register('payments', views.PaymentViewSet)
+router.register('product-stocks', views.ProductStockViewSet, basename='product-stock')
 
 # Nested routers
 purchase_order_router = routers.NestedDefaultRouter(router, 'purchase-orders', lookup='purchase_order')
@@ -36,4 +37,6 @@ urlpatterns = [
     path('', include(purchase_order_router.urls)),
     path('', include(sales_order_router.urls)),
     path('', include(invoice_router.urls)),
+    path('product-stocks/', views.ProductStockView.as_view(), name='product-stocks'),
+
 ]

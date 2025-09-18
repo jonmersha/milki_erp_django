@@ -78,10 +78,6 @@ class CustomerViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
-
-
-
-
 # 2. Company ViewSet
 class CompanyViewSet(ModelViewSet):
     queryset = Company.objects.all()
@@ -124,10 +120,14 @@ class StockMovementLogViewSet(ModelViewSet):
     serializer_class = StockMovementLogSerializer
 
 
+
+
 # 9. Supplier ViewSet
 class SupplierViewSet(ModelViewSet):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
+
+
 
 
 # 10. Purchase Order ViewSet
@@ -176,3 +176,15 @@ class PaymentMethodViewSet(ModelViewSet):
 class PaymentViewSet(ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
+class ProductStockView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductStockSerializer
+
+
+class ProductStockViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that returns products with stock quantities in all warehouses.
+    """
+    queryset = Product.objects.all()
+    serializer_class = ProductStockSerializer

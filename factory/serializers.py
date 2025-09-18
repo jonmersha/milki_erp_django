@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from core.serializer import UserSerializer
 from .models import *
+from rest_framework import generics
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -103,9 +104,11 @@ class ProductSerializer(serializers.ModelSerializer):
 
 # 7. Stock Serializer
 class StockSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)  # Nested product serializer
+    warehouse = WarehouseSerializer(read_only=True)  # Nested warehouse serializer
     class Meta:
         model = Stock
-        fields = ['id', 'warehouse', 'product', 'unit_price', 'quantity', 
+        fields = ['id', 'warehouse', "product", 'unit_price', 'quantity', 
                   'last_updated', 'is_authorized', 'authorization_time', 'authorizer', 'inputer']
 
 
@@ -190,3 +193,25 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ['id', 'invoice', 'payment_date', 'amount', 'method', 'reference_number', 
                   'payer', 'supplier', 'status', 'created_at', 'updated_at']
+
+
+
+#========================================Products in warehouses===============================
+class WarehouseStockSerializer(serializers.ModelSerializer):
+    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+
+    class Meta:
+        model = Stock
+        fields = ['warehouse_name', 'quantity']
+
+class ProductStockSerializer(serializers.ModelSerializer):
+    stocks = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = ['id', 'code', 'name', 'stocks']
+
+    def get_stocks(self, obj):
+        # Prefetch warehouses to reduce queries
+        stocks = Stock.objects.filter(product=obj).select_related('warehouse')
+        return WarehouseStockSerializer(stocks, many=True).data
