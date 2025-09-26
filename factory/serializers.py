@@ -82,7 +82,7 @@ class FactorySerializer(serializers.ModelSerializer):
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
-        fields = ['id', 'capacity', 'status', 'is_authorized', 'authorization_time', 
+        fields = ['id','description','capacity', 'status', 'is_authorized', 'authorization_time', 
                   'created_at', 'updated_at', 'authorized_by', 'factory']
 
 
@@ -209,7 +209,7 @@ class ProductStockSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'code', 'name', 'stocks']
+        fields = ['id', 'code', 'name', 'description', 'stocks']
 
     def get_stocks(self, obj):
         # Prefetch warehouses to reduce queries
