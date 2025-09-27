@@ -1,6 +1,0 @@
-# Ignore everything starting with a dot (hidden files)
-
-.htaccess
-*.log
-db.sqlite3
-.htaccess
