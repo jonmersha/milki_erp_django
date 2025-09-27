@@ -9,5 +9,6 @@ typing_extensions==4.14.1
 whitenoise==6.9.0
 djoser==2.3.3
 django-debug-toolbar==6.0.0
-drf-nested-routers==0.94.1   
+drf-nested-routers==0.94.1
+django-filter>=23.1,<25.1
 
