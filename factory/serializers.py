@@ -34,34 +34,6 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 
-
-
-
-
-
-
-
-
-# class CustomerUpdateSerializer(serializers.ModelSerializer):
-#     # Allow updating nested user fields
-#     first_name = serializers.CharField(source="user.first_name", required=False)
-#     last_name = serializers.CharField(source="user.last_name", required=False)
-#     email = serializers.EmailField(source="user.email", required=False)
-
-#     class Meta:
-#         model = Customer
-#         fields = ["phone", "birth_date", "membership", "first_name", "last_name", "email"]
-
-#     def update(self, instance, validated_data):
-#         user_data = validated_data.pop("user", {})
-#         # Update user fields
-#         if user_data:
-#             for attr, value in user_data.items():
-#                 setattr(instance.user, attr, value)
-#             instance.user.save()
-
-#         # Update customer fields
-#         return super().update(instance, validated_data)
 # 2. Company Serializer
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,8 +54,8 @@ class FactorySerializer(serializers.ModelSerializer):
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
-        fields = ['id','description','capacity', 'status', 'is_authorized', 'authorization_time', 
-                  'created_at', 'updated_at', 'authorized_by', 'factory']
+        fields = ['id', 'factory','description','capacity', 'status', 'is_authorized', 'authorization_time', 
+                  'created_at', 'updated_at', 'authorized_by']
 
 
 # 5. Category Serializer
@@ -104,16 +76,26 @@ class ProductSerializer(serializers.ModelSerializer):
 
 # 7. Stock Serializer
 class StockSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)  # Nested product serializer
-    warehouse = WarehouseSerializer(read_only=True)  # Nested warehouse serializer
+    # product = ProductSerializer(read_only=True)  # Nested product serializer
+    # warehouse = WarehouseSerializer(read_only=True)  # Nested warehouse serializer
     class Meta:
         model = Stock
         fields = ['id', 'warehouse', "product", 'unit_price', 'quantity', 
                   'last_updated', 'is_authorized', 'authorization_time', 'authorizer', 'inputer']
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be a positive number.")
+        return value
+
+    def validate_unit_price(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Unit price must be a positive number.")
+        return value
 
 
 # 8. Stock Movement Log Serializer
 class StockMovementLogSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = StockMovementLog
         fields = ['id', 'product', 'mdate', 'unit_price', 'quantity', 'movement_type', 

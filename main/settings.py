@@ -19,6 +19,7 @@ ALLOWED_HOSTS = [
     'www.m.besheger.com',
     'localhost',
     '127.0.0.1',
+    '192.168.1.4',
      '::1' # optional if you also use the www subdomain
 ]
 
@@ -44,7 +45,13 @@ INSTALLED_APPS = [
     'djoser',
     'debug_toolbar',
     'factory',
-    'core'
+    'core',
+    'users',
+    'inventory',
+    'finance',
+    'crm',
+    'hr',
+    'reporting'
 ]
 
 MIDDLEWARE = [
@@ -59,7 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'milki.urls'
+ROOT_URLCONF = 'main.urls'
 
 TEMPLATES = [
     {
@@ -76,7 +83,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'milki.wsgi.application'
+WSGI_APPLICATION = 'main.wsgi.application'
 
 
 # Database
@@ -84,7 +91,7 @@ WSGI_APPLICATION = 'milki.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'milki4',
         'HOST': 'localhost',
         'USER': 'storeuser',

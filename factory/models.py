@@ -40,6 +40,7 @@ class Customer(models.Model):
         ]
 
 
+
 # 2. Company
 class Company(models.Model):
     STATUS_CHOICES = [
@@ -87,16 +88,16 @@ class Warehouse(models.Model):
         ('ACTIVE', 'Active'),
         ('INACTIVE', 'Inactive'),
     ]
-
-    capacity = models.IntegerField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
+    factory = models.ForeignKey(Factory, on_delete=models.CASCADE)
+    capacity = models.IntegerField(blank=False, null=False)
+    description = models.TextField(blank=False, null=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, null=True)
     is_authorized = models.BooleanField(default=False)
     authorization_time = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now=True)
     authorized_by = models.ForeignKey(Customer, on_delete=models.SET_NULL, blank=True, null=True)
-    factory = models.ForeignKey(Factory, on_delete=models.CASCADE)
+    
 
     def __str__(self):
         return f"Warehouse {self.id} - {self.factory.name}"
@@ -135,16 +136,22 @@ class Product(models.Model):
 
 
 # 7. Stock
+# if the Product already exists in the Warehouse, update the quantity and unit price.
+# If not, create a new Stock entry.
 class Stock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     quantity = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
+
     is_authorized = models.BooleanField(default=False)
     authorization_time = models.DateTimeField(blank=True, null=True)
     authorizer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="stock_authorizer")
     inputer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="stock_inputer")
+
+    class Meta:
+        unique_together = ("warehouse", "product")  # ensure no duplicates
 
     def __str__(self):
         return f"{self.product.name} in {self.warehouse}"
@@ -157,11 +164,10 @@ class StockMovementLog(models.Model):
         ('SALES', 'Sales'),
         ('TRANSFER', 'Transfer'),
     ]
-
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     mdate = models.DateTimeField(default=timezone.now)
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    quantity = models.IntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True,)
+    quantity = models.PositiveIntegerField()
     movement_type = models.CharField(max_length=10, choices=MOVEMENT_CHOICES)
     remarks = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=20, blank=True, null=True)
@@ -177,6 +183,8 @@ class StockMovementLog(models.Model):
 
     def __str__(self):
         return f"{self.movement_type} - {self.product.name}"
+
+
 # 9. Suppliers
 class Supplier(models.Model):
     STATUS_CHOICES = [

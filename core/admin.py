@@ -1,17 +1,17 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User
+# from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+# from .models import User
 
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active')
-        }),
-    ) 
+# @admin.register(User)
+# class UserAdmin(BaseUserAdmin):
+#     add_fieldsets = (
+#         (None, {
+#             'classes': ('wide',),
+#             'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active')
+#         }),
+#     ) 
 
-# class TaggedItemInline(GenericStackedInline):
+# # class TaggedItemInline(GenericStackedInline):
 #     autocomplete_fields = ['tag']
 #     model = TaggedItem
 # class CustomProductAdmin(ProductAdmin):

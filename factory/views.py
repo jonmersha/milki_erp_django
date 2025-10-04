@@ -109,10 +109,51 @@ class ProductViewSet(ModelViewSet):
 
 
 # 7. Stock ViewSet
+
 class StockViewSet(ModelViewSet):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        warehouse_id = data.get("warehouse")
+        product_id = data.get("product")
+        quantity = int(data.get("quantity", 0))
+        unit_price = data.get("unit_price")
+        inputer_id = data.get("inputer")
+        authorizer_id = data.get("authorizer")
+
+        if not warehouse_id or not product_id:
+            return Response({"error": "warehouse and product are required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+            product = Product.objects.get(id=product_id)
+            inputer = Customer.objects.get(id=inputer_id) if inputer_id else None
+            authorizer = Customer.objects.get(id=authorizer_id) if authorizer_id else None
+        except (Warehouse.DoesNotExist, Product.DoesNotExist, Customer.DoesNotExist):
+            return Response({"error": "Invalid warehouse, product, or customer ID."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if stock exists for this warehouse and product
+        stock = Stock.objects.filter(warehouse=warehouse, product=product).first()
+
+        if stock:
+            stock.quantity += quantity
+            if unit_price:
+                stock.unit_price = unit_price
+            stock.last_updated = timezone.now()
+            stock.save(update_fields=["quantity", "unit_price", "last_updated"])
+            serializer = self.get_serializer(stock)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Create new stock if not exists
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # 8. Stock Movement Log ViewSet
 class StockMovementLogViewSet(ModelViewSet):
