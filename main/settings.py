@@ -6,7 +6,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = False
+DEBUG = True
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -19,7 +19,8 @@ ALLOWED_HOSTS = [
     'www.m.besheger.com',
     'localhost',
     '127.0.0.1',
-    '192.168.1.4',
+    '192.168.1.3',
+    '10.0.0.1',
      '::1' # optional if you also use the www subdomain
 ]
 
@@ -44,14 +45,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'debug_toolbar',
-    'factory',
+    
     'core',
     'users',
     'inventory',
     'finance',
     'crm',
     'hr',
-    'reporting'
+    'reporting',
+    'poso'
 ]
 
 MIDDLEWARE = [
@@ -92,7 +94,7 @@ WSGI_APPLICATION = 'main.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'milki4',
+        'NAME': 'milki6',
         'HOST': 'localhost',
         'USER': 'storeuser',
         'PASSWORD': 'Yohannes@123321'
@@ -162,12 +164,12 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
 }
 
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'users.User'
 
 
 DJOSER = {
     'SERIALIZERS': {
-        'user_create': 'core.serializer.UserCreateSerializer',
-        'current_user': 'core.serializer.UserSerializer',
+        'user_create': 'users.serializer.UserCreateSerializer',
+        'current_user': 'users.serializer.UserSerializer',
     }
 }                   
