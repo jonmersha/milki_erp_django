@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from inventory.serializers import ProductSerializer
 from .models import (
     Supplier, Customer,
     PurchaseOrder, PurchaseOrderItem,
@@ -57,6 +59,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 # -----------------------------
 class SalesOrderItemSerializer(serializers.ModelSerializer):
     total_price = serializers.ReadOnlyField()
+    product = ProductSerializer().read_only=True
 
     class Meta:
         model = SalesOrderItem
