@@ -3,10 +3,10 @@ from django.shortcuts import render
 # Create your views here.
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Warehouse, ProductPackage, Product, Stock, InventoryMovement
+from .models import Warehouse, ProductPackage, Product, Stock, InventoryMovementLog,StockTransfer
 from .serializers import (
     WarehouseSerializer, ProductPackageSerializer, ProductSerializer,
-    StockSerializer, InventoryMovementSerializer
+    StockSerializer, InventoryMovementSerializer,StockTransferSerializer
 )
 
 class WarehouseViewSet(viewsets.ModelViewSet):
@@ -30,6 +30,10 @@ class StockViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 class InventoryMovementViewSet(viewsets.ModelViewSet):
-    queryset = InventoryMovement.objects.all()
+    queryset = InventoryMovementLog.objects.all()
     serializer_class = InventoryMovementSerializer
+    permission_classes = [IsAuthenticated]
+class StockTransferViewSet(viewsets.ModelViewSet):
+    queryset = StockTransfer.objects.all()
+    serializer_class = StockTransferSerializer
     permission_classes = [IsAuthenticated]

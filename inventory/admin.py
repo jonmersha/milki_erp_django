@@ -1,7 +1,7 @@
 # inventory/admin.py
 
 from django.contrib import admin
-from .models import Warehouse, Product, Stock, InventoryMovement,ProductPackage
+from .models import Warehouse, Product, Stock, InventoryMovementLog,ProductPackage,StockTransfer
 
 # @admin.register(ProductPackage)
 # class ProductPackageAdmin(admin.ModelAdmin):
@@ -69,13 +69,82 @@ class StockAdmin(admin.ModelAdmin):
 # -----------------------------
 # InventoryMovement Admin
 # -----------------------------
-@admin.register(InventoryMovement)
-class InventoryMovementAdmin(admin.ModelAdmin):
+@admin.register(InventoryMovementLog)
+class InventoryMovementLogAdmin(admin.ModelAdmin):
     list_display = (
-        'product', 'movement_type', 'quantity',
-        'source_warehouse', 'destination_warehouse',
-        'date', 'status', 'is_authorized'
+        'id',
+        'product',
+        'date',
+        'movement_type',
+        'reason',
+        'get_warehouse',
+        'quantity',
+        'unit_price',
+        'status'
     )
-    search_fields = ('product__name', 'source_warehouse__name', 'destination_warehouse__name')
-    list_filter = ('movement_type', 'status', 'is_authorized')
-    readonly_fields = ('date', 'created_at', 'updated_at')
+
+    list_filter = (
+        'movement_type',
+        'reason',
+        'status',
+        'date',
+        'warehouse'
+    )
+
+    search_fields = (
+        'id',
+        'product__name',
+        'remarks'
+    )
+
+    ordering = ('-date',)
+
+    def get_warehouse(self, obj):
+        return obj.warehouse.name if obj.warehouse else None
+    get_warehouse.short_description = 'Warehouse'
+
+@admin.register(StockTransfer)
+class StockTransferAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "product",
+        "quantity",
+        "unit_of_measure",
+        "source_warehouse",
+        "destination_warehouse",
+        "status",
+        "requested_by",
+        "authorized_by",
+        "requested_date",
+        "authorized_date",
+        "completed_date",
+    )
+
+    list_filter = ("status", "requested_date", "authorized_date", "completed_date")
+    search_fields = ("id", "product__name", "source_warehouse__name", "destination_warehouse__name")
+    readonly_fields = ("id", "requested_date", "authorized_date", "completed_date")
+
+    ordering = ("-requested_date",)
+
+    fieldsets = (
+        ("Transfer Details", {
+            "fields": (
+                "product",
+                "quantity",
+                "unit_of_measure",
+                "source_warehouse",
+                "destination_warehouse",
+                "status",
+                "remarks",
+            )
+        }),
+        ("Authorization", {
+            "fields": (
+                "requested_by",
+                "authorized_by",
+                "requested_date",
+                "authorized_date",
+                "completed_date",
+            )
+        }),
+    )

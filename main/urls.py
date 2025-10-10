@@ -98,7 +98,7 @@ admin.site.index_title = "Welcome to Milki System Management Dashboard"
 # INVENTORY app viewsets
 from inventory.views import (
     WarehouseViewSet, ProductPackageViewSet, ProductViewSet,
-    StockViewSet, InventoryMovementViewSet
+    StockViewSet, InventoryMovementViewSet, StockTransferViewSet
 )
 from users.views import UserViewSet
 
@@ -131,6 +131,7 @@ inventory_router.register(r'product-packages', ProductPackageViewSet)
 inventory_router.register(r'products', ProductViewSet)
 inventory_router.register(r'stocks', StockViewSet)
 inventory_router.register(r'inventory-movements', InventoryMovementViewSet)
+inventory_router.register(r'stock-transfers', StockTransferViewSet) 
 # Users Routes
 users_router.register(r'users', UserViewSet)
 
