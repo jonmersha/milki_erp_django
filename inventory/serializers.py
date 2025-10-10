@@ -37,11 +37,18 @@ class ProductSerializer(serializers.ModelSerializer):
 # -----------------------------
 # Stock
 # -----------------------------
+class PRD(serializers.ModelSerializer):
+    class Meta:
+        model=Product
+        fields=['id', 'name', 'description', 'unit_price']
+
 class StockSerializer(serializers.ModelSerializer):
+    d =PRD(read_only=True)
+    # warehouse=WarehouseSerializer()
     class Meta:
         model = Stock
         fields = [
-            'id', 'product', 'warehouse', 'quantity', 'last_updated',
+            'id', 'd','product', 'warehouse', 'quantity', 'last_updated',
             'remarks', 'locked_amount', 'unit_price', 'total_value',
             'minimum_threshold', 'created_at', 'updated_at'
         ]
