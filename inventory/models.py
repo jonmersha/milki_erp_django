@@ -3,6 +3,9 @@ from django.utils import timezone
 from core.base import BaseModel
 from core.models import Company, Factory
 from core.utility.uuidgen import generate_custom_id
+# from django.contrib.auth.models import User
+from django.utils import timezone
+from django.conf import settings
 
 
 # -----------------------------
@@ -161,7 +164,7 @@ class Stock(BaseModel):
 # -----------------------------
 
 
-class InventoryMovement(BaseModel):
+class InventoryMovementLog(BaseModel):
     MOVEMENT_TYPE_CHOICES = [
     ('inbound', 'Inbound'),
     ('outbound', 'Outbound'),
@@ -197,17 +200,10 @@ class InventoryMovement(BaseModel):
         choices=MOVEMENT_REASON_CHOICES,
         help_text="Reason for this inventory movement"
     )
-    source_warehouse = models.ForeignKey(
+    warehouse = models.ForeignKey(
         'Warehouse',
         on_delete=models.PROTECT,
         related_name='movement_source_warehouse',
-        null=True,
-        blank=True
-    )
-    destination_warehouse = models.ForeignKey(
-        'Warehouse',
-        on_delete=models.PROTECT,
-        related_name='movement_destination_warehouse',
         null=True,
         blank=True
     )
@@ -247,3 +243,91 @@ class InventoryMovement(BaseModel):
     def __str__(self):
         warehouse = self.source_warehouse or self.destination_warehouse
         return f"{self.id} | {self.movement_type} ({self.reason}) - {self.product.name} ({self.quantity}) | {warehouse}"
+
+
+
+# Ensure you have this helper defined somewhere in utils/helpers.py, for example
+# def generate_custom_id(prefix: str, partition: str, length: int) -> str:
+#     import uuid
+#     unique_part = uuid.uuid4().hex[:length - len(prefix) - len(partition) - 1].upper()
+#     return f"{prefix}{partition}{unique_part}"
+
+
+class StockTransfer(BaseModel):
+    TRANSFER_STATUS = [
+        ('PENDING', 'Pending'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
+    id = models.CharField(
+        max_length=20,
+        primary_key=True,
+        editable=False,
+        unique=True
+    )
+
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='stock_transfers'
+    )
+
+    quantity = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_of_measure = models.CharField(max_length=20, default='pcs')
+
+    source_warehouse = models.ForeignKey(
+        'Warehouse',
+        on_delete=models.CASCADE,
+        related_name='outgoing_transfers'
+    )
+
+    destination_warehouse = models.ForeignKey(
+        'Warehouse',
+        on_delete=models.CASCADE,
+        related_name='incoming_transfers'
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=TRANSFER_STATUS,
+        default='PENDING'
+    )
+
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='requested_transfers'
+    )
+
+    requested_date = models.DateTimeField(auto_now_add=True)
+    authorized_date = models.DateTimeField(null=True, blank=True)
+    completed_date = models.DateTimeField(null=True, blank=True)
+
+    remarks = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'stock_transfer'
+        ordering = ['-requested_date']
+        verbose_name = 'Stock Transfer'
+        verbose_name_plural = 'Stock Transfers'
+
+    def __str__(self):
+        return f"{self.id} - {self.product.name} ({self.quantity} {self.unit_of_measure})"
+
+    def mark_completed(self):
+        """Mark the transfer as completed and record completion time."""
+        if self.status != 'COMPLETED':
+            self.status = 'COMPLETED'
+            self.completed_date = timezone.now()
+            self.save(update_fields=['status', 'completed_date'])
+
+    def save(self, *args, **kwargs):
+        """Generate a unique transfer ID if not set."""
+        if not self.id:
+            partition = timezone.now().strftime("%Y%m%d")
+            from utils.helpers import generate_custom_id
+            self.id = generate_custom_id(prefix="TRN", partition=partition, length=16)
+        super().save(*args, **kwargs)

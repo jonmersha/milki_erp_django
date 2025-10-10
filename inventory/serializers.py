@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Warehouse, ProductPackage, Product, Stock, InventoryMovement
-
+from .models import Warehouse, ProductPackage, Product, Stock, InventoryMovementLog, StockTransfer
+from django.conf import settings
 # -----------------------------
 # Warehouse
 # -----------------------------
@@ -58,9 +58,16 @@ class StockSerializer(serializers.ModelSerializer):
 # -----------------------------
 class InventoryMovementSerializer(serializers.ModelSerializer):
     class Meta:
-        model = InventoryMovement
+        model = InventoryMovementLog
         fields = [
             'id', 'product', 'date', 'quantity', 'movement_type',
             'source_warehouse', 'destination_warehouse', 'unit_price',
             'remarks', 'status', 'created_at', 'updated_at'
         ]
+class StockTransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StockTransfer
+        fields = [
+            'id', 'product', 'from_warehouse', 'to_warehouse', 'quantity',
+            'status', 'requested_by', 'approved_by', 'created_at', 'updated_at'
+        ]   

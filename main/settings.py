@@ -20,6 +20,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '192.168.1.3',
+    '10.11.246.192',
     '10.0.0.1',
      '::1' # optional if you also use the www subdomain
 ]
