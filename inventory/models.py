@@ -9,7 +9,6 @@ from core.utility.uuidgen import generate_custom_id
 # Warehouse
 # -----------------------------
 
-
 class Warehouse(BaseModel):
     STATUS_CHOICES = [
         ('active', 'Active'),
