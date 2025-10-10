@@ -80,7 +80,7 @@ from main.cd import CreateAdminUserView
 # -----------------------------
 # CORE app viewsets
 from core.views import (
-    CompanyViewSet, FactoryViewSet, AdminRegionViewSet
+    CityViewSet, CompanyViewSet, FactoryViewSet, AdminRegionViewSet
 )
 
 # POSO app viewsets
@@ -114,6 +114,7 @@ users_router = DefaultRouter()
 core_router.register(r'companies', CompanyViewSet)
 core_router.register(r'factories', FactoryViewSet)
 core_router.register(r'admin-regions', AdminRegionViewSet)
+core_router.register(r'cities', CityViewSet)
 
 # POSO routes
 poso_router.register(r'suppliers', SupplierViewSet)

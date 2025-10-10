@@ -8,8 +8,8 @@ from .models import AdminRegion, City, Company, Factory
 # -----------------------------
 @admin.register(AdminRegion)
 class AdminRegionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'code', 'status', 'created_at')
-    search_fields = ('name', 'code', 'description')
+    list_display = ('id', 'name', 'status', 'created_at')
+    search_fields = ('name',  'description')
     list_filter = ('status',)
     readonly_fields = ('id', 'created_at', 'updated_at')
 

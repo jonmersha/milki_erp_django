@@ -228,7 +228,7 @@ class InventoryMovementLog(BaseModel):
             # Only create the counterpart if it does not exist
             if self.movement_type == 'outbound' and self.destination_warehouse:
                 # Create corresponding inbound movement
-                InventoryMovement.objects.create(
+                InventoryMovementLog.objects.create(
                     product=self.product,
                     quantity=self.quantity,
                     movement_type='inbound',

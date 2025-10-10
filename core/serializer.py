@@ -10,7 +10,7 @@ from .models import AdminRegion, City, Company, Factory
 class AdminRegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminRegion
-        fields = ['id', 'name', 'code', 'description', 'status', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'status', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 

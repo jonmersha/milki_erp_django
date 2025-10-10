@@ -61,13 +61,14 @@ class InventoryMovementSerializer(serializers.ModelSerializer):
         model = InventoryMovementLog
         fields = [
             'id', 'product', 'date', 'quantity', 'movement_type',
-            'source_warehouse', 'destination_warehouse', 'unit_price',
+            'warehouse', 'unit_price',
             'remarks', 'status', 'created_at', 'updated_at'
         ]
+
 class StockTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockTransfer
         fields = [
-            'id', 'product', 'from_warehouse', 'to_warehouse', 'quantity',
-            'status', 'requested_by', 'approved_by', 'created_at', 'updated_at'
+            'id', 'product', 'source_warehouse', 'destination_warehouse', 'quantity',
+            'status', 'authorized_by', 'created_at', 'updated_at'
         ]   

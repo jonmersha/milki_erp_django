@@ -19,8 +19,6 @@ class AdminRegion(BaseModel):
         unique=True
     )
     name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=10, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     def save(self, *args, **kwargs):
