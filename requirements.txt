@@ -12,3 +12,4 @@ django-debug-toolbar==6.0.0
 drf-nested-routers==0.94.1
 django-filter>=23.1,<25.1
 
+
