@@ -19,7 +19,7 @@ ALLOWED_HOSTS = [
     'www.m.besheger.com',
     'localhost',
     '127.0.0.1',
-    '192.168.1.3',
+    '192.168.1.6',
     '10.11.246.192',
     '10.0.0.1',
      '::1' # optional if you also use the www subdomain
