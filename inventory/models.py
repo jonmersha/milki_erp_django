@@ -42,7 +42,7 @@ class Warehouse(BaseModel):
     def save(self, *args, **kwargs):
         if not self.id:
             partition = timezone.now().strftime("%Y%m%d")
-            self.id = generate_custom_id(prefix="WH", partition=partition, length=16)
+            self.id = generate_custom_id(prefix="WRH", partition=partition, length=16)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -54,12 +54,37 @@ class Warehouse(BaseModel):
 # -----------------------------
 class ProductPackage(BaseModel):
     id = models.CharField(
-        max_length=16,
         primary_key=True,
+        max_length=16,
         editable=False,
         unique=True
     )
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    size = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Physical size or capacity, e.g., 500g, 1L, 20kg, etc."
+    )
+    dimensions = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Optional package dimensions (LxWxH in cm)."
+    )
+    weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Weight in kilograms, if applicable."
+    )
+
+    class Meta:
+        verbose_name = "Product Package"
+        verbose_name_plural = "Product Packages"
+        ordering = ['name']
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -68,7 +93,7 @@ class ProductPackage(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.size or 'N/A'})"
 
 
 # -----------------------------
@@ -83,14 +108,7 @@ class Product(BaseModel):
         ('pcs', 'Pieces'),
         ('box', 'Box'),
         ('pack', 'Pack'),
-        ('NA', 'NA'),
-    ]
-
-    PACKAGE_SIZE_CHOICES = [
-        ('NA', 'NA'),
-        ('small', 'Small'),
-        ('medium', 'Medium'),
-        ('large', 'Large'),
+        ('na', 'Not Applicable'),
     ]
 
     STATUS_CHOICES = [
@@ -99,19 +117,21 @@ class Product(BaseModel):
     ]
 
     id = models.CharField(
-        max_length=16,
         primary_key=True,
+        max_length=16,
         editable=False,
         unique=True
     )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
-    unit_of_measure = models.CharField(max_length=50, choices=UNIT_CHOICES)
-    package_size = models.CharField(max_length=50, choices=PACKAGE_SIZE_CHOICES, blank=True, null=True)
-    package_name = models.ForeignKey(ProductPackage, on_delete=models.PROTECT, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, null=True)
-    factory = models.ForeignKey(Company, on_delete=models.PROTECT, related_name='products')
+    unit_of_measure = models.CharField(max_length=20, choices=UNIT_CHOICES)
+    package = models.ForeignKey(
+        ProductPackage, on_delete=models.PROTECT, blank=True, null=True,
+        help_text="Optional reference to a defined package type"
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name='products')
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -120,7 +140,7 @@ class Product(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.id} | {self.name}"
+        return f"{self.name} ({self.id})"
 
 
 # -----------------------------

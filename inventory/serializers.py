@@ -19,21 +19,55 @@ class ProductPackageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductPackage
         fields = [
-            'id', 'name', 'created_at', 'updated_at'
+            'id',
+            'name',
+            'description',
+            'size',
+            'dimensions',
+            'weight',
         ]
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        return ProductPackage.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 # -----------------------------
 # Product
 # -----------------------------
 class ProductSerializer(serializers.ModelSerializer):
+    package_name = serializers.CharField(source='package.name', read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True)
+
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'unit_price', 'unit_of_measure',
-            'package_size', 'package_name', 'status', 'factory',
-            'created_at', 'updated_at'
+            'id',
+            'name',
+            'description',
+            'unit_price',
+            'unit_of_measure',
+            'package',
+            'package_name',
+            'status',
+            'company',
+            'company_name',
         ]
+        read_only_fields = ['id']
 
+    def create(self, validated_data):
+        return Product.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 # -----------------------------
 # Stock
 # -----------------------------

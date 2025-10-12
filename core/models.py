@@ -101,26 +101,38 @@ class Factory(BaseModel):
     ]
 
     id = models.CharField(
-        max_length=16,
         primary_key=True,
+        max_length=16,
         editable=False,
         unique=True
     )
-    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="factories")
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, related_name="factories"
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
-    location = models.TextField(blank=True, null=True)
-    city = models.ForeignKey(City, on_delete=models.PROTECT, related_name="factories")
-    admin_region = models.ForeignKey(AdminRegion, on_delete=models.PROTECT, related_name="factories")
-    unique_location = models.CharField(max_length=100)
-    capacity = models.PositiveIntegerField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    city = models.ForeignKey(
+        City, on_delete=models.PROTECT, related_name="factories"
+    )
+    capacity = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Maximum production capacity (e.g., units per day)."
+    )
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default='active'
+    )
+
+    class Meta:
+        verbose_name = "Factory"
+        verbose_name_plural = "Factories"
+        ordering = ['name']
 
     def save(self, *args, **kwargs):
         if not self.id:
             partition = timezone.now().strftime("%Y%m%d")
-            self.id = generate_custom_id(prefix="FAC", partition=partition, length=16)
+            self.id = generate_custom_id(prefix="FCT", partition=partition, length=16)
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.id} | {self.name} ({self.city.name})"
+        return f"{self.name} ({self.city.name})"

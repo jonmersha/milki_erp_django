@@ -1,47 +1,34 @@
-# core/admin.py
-
 from django.contrib import admin
 from .models import AdminRegion, City, Company, Factory
 
-# -----------------------------
-# AdminRegion Admin
-# -----------------------------
+
 @admin.register(AdminRegion)
 class AdminRegionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'status', 'created_at')
-    search_fields = ('name',  'description')
+    list_display = ('id', 'name', 'status')
+    search_fields = ('name',)
     list_filter = ('status',)
-    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('name',)
 
 
-# -----------------------------
-# City Admin
-# -----------------------------
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'admin_region', 'status', 'created_at')
-    search_fields = ('name', 'description', 'admin_region__name')
+    list_display = ('id', 'name', 'admin_region', 'status')
+    search_fields = ('name', 'admin_region__name')
     list_filter = ('status', 'admin_region')
-    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('name',)
 
 
-# -----------------------------
-# Company Admin
-# -----------------------------
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'status', 'created_at')
-    search_fields = ('name', 'description')
+    list_display = ('id', 'name', 'status')
+    search_fields = ('name',)
     list_filter = ('status',)
-    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('name',)
 
 
-# -----------------------------
-# Factory Admin
-# -----------------------------
 @admin.register(Factory)
 class FactoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'company', 'city', 'admin_region', 'capacity', 'status', 'created_at')
-    search_fields = ('name', 'description', 'company__name', 'city__name', 'admin_region__name')
-    list_filter = ('status', 'company', 'city', 'admin_region')
-    readonly_fields = ('id', 'created_at', 'updated_at')
+    list_display = ('id', 'name', 'company', 'city', 'capacity', 'status')
+    search_fields = ('name', 'company__name', 'city__name')
+    list_filter = ('status', 'company', 'city')
+    ordering = ('name',)
