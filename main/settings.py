@@ -6,7 +6,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = True
+DEBUG = False
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -36,6 +36,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -174,3 +175,9 @@ DJOSER = {
         'current_user': 'users.serializer.UserSerializer',
     }
 }                   
+JAZZMIN_SETTINGS = {
+    "site_title": "Milki Admin",
+    "site_header": "Milki Administration",
+    "welcome_sign": "Welcome to the Milki Admin Portal",
+    "search_model": "auth.User",
+    "show_sidebar": True   }

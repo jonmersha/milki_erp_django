@@ -11,5 +11,8 @@ djoser==2.3.3
 django-debug-toolbar==6.0.0
 drf-nested-routers==0.94.1
 django-filter>=23.1,<25.1
+django-jazzmin==3.0.1
+
+
 
 
