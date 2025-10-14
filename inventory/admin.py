@@ -113,17 +113,19 @@ class StockTransferAdmin(admin.ModelAdmin):
         "source_warehouse",
         "destination_warehouse",
         "status",
-        "requested_by",
-        "authorized_by",
         "requested_date",
         "authorized_date",
         "completed_date",
     )
 
     list_filter = ("status", "requested_date", "authorized_date", "completed_date")
-    search_fields = ("id", "product__name", "source_warehouse__name", "destination_warehouse__name")
+    search_fields = (
+        "id",
+        "product__name",
+        "source_warehouse__name",
+        "destination_warehouse__name",
+    )
     readonly_fields = ("id", "requested_date", "authorized_date", "completed_date")
-
     ordering = ("-requested_date",)
 
     fieldsets = (
@@ -138,10 +140,8 @@ class StockTransferAdmin(admin.ModelAdmin):
                 "remarks",
             )
         }),
-        ("Authorization", {
+        ("Dates", {
             "fields": (
-                "requested_by",
-                "authorized_by",
                 "requested_date",
                 "authorized_date",
                 "completed_date",

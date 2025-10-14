@@ -100,9 +100,26 @@ class InventoryMovementSerializer(serializers.ModelSerializer):
         ]
 
 class StockTransferSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    source_warehouse_name = serializers.CharField(source='source_warehouse.name', read_only=True)
+    destination_warehouse_name = serializers.CharField(source='destination_warehouse.name', read_only=True)
+
     class Meta:
         model = StockTransfer
         fields = [
-            'id', 'product', 'source_warehouse', 'destination_warehouse', 'quantity',
-            'status', 'authorized_by', 'created_at', 'updated_at'
-        ]   
+            "id",
+            "product",
+            "product_name",
+            "quantity",
+            "unit_of_measure",
+            "source_warehouse",
+            "source_warehouse_name",
+            "destination_warehouse",
+            "destination_warehouse_name",
+            "status",
+            "requested_date",
+            "authorized_date",
+            "completed_date",
+            "remarks",
+        ]
+        read_only_fields = ("id", "requested_date", "authorized_date", "completed_date") 
