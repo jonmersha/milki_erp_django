@@ -76,6 +76,9 @@ class Company(BaseModel):
         editable=False,
         unique=True
     )
+    city = models.ForeignKey(
+        City, on_delete=models.PROTECT, related_name="comapaney"
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     logo_url = models.TextField(blank=True, null=True)
@@ -92,7 +95,7 @@ class Company(BaseModel):
 
 
 # -----------------------------
-# Factory
+# Factory home
 # -----------------------------
 class Factory(BaseModel):
     STATUS_CHOICES = [

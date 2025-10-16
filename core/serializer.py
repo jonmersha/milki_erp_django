@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import AdminRegion, City, Company, Factory
 
 
+
 # -----------------------------
 # AdminRegion Serializer
 # -----------------------------
@@ -36,40 +37,14 @@ class CitySerializer(serializers.ModelSerializer):
 # Company Serializer
 # -----------------------------
 class CompanySerializer(serializers.ModelSerializer):
+    city_name = serializers.CharField(source='city.name', read_only=True)
     class Meta:
         model = Company
-        fields = ['id', 'name', 'description', 'logo_url', 'status', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'city','city_name','description', 'logo_url', 'status', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
-# -----------------------------
-# Factory Serializer
-# -----------------------------
-# class FactorySerializer(serializers.ModelSerializer):
-#     company = CompanySerializer(read_only=True)
-#     company_id = serializers.PrimaryKeyRelatedField(
-#         queryset=Company.objects.all(),
-#         source='company',
-#         write_only=True
-#     )
 
-#     city = CitySerializer(read_only=True)
-#     city_id = serializers.PrimaryKeyRelatedField(
-#         queryset=City.objects.all(),
-#         source='city',
-#         write_only=True
-#     )
-#     class Meta:
-#         model = Factory
-#         fields = [
-#             'id', 'name', 'description', 'unique_location', 'capacity', 'status',
-#             'company', 'company_id', 'city', 'city_id',
-#             'created_at', 'updated_at'
-#         ]
-#         read_only_fields = ['id', 'created_at', 'updated_at']
-
-from rest_framework import serializers
-from .models import Factory
 
 
 class FactorySerializer(serializers.ModelSerializer):
