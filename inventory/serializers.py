@@ -99,32 +99,6 @@ class InventoryMovementSerializer(serializers.ModelSerializer):
             'remarks', 'status', 'created_at', 'updated_at'
         ]
 
-# class StockTransferSerializer(serializers.ModelSerializer):
-#     product_name = serializers.CharField(source='product.name', read_only=True)
-#     source_warehouse_name = serializers.CharField(source='source_warehouse.name', read_only=True)
-#     destination_warehouse_name = serializers.CharField(source='destination_warehouse.name', read_only=True)
-
-#     class Meta:
-#         model = StockTransfer
-#         fields = [
-#             "id",
-#             "product",
-#             "product_name",
-#             "quantity",
-#             "unit_of_measure",
-#             "source_warehouse",
-#             "source_warehouse_name",
-#             "destination_warehouse",
-#             "destination_warehouse_name",
-#             "status",
-#             "requested_date",
-#             "authorized_date",
-#             "completed_date",
-#             "remarks",
-#         ]
-#         read_only_fields = ("id", "requested_date", "authorized_date", "completed_date") 
-
-# serializers.py
 
 
 class StockTransferSerializer(serializers.ModelSerializer):
@@ -138,7 +112,7 @@ class StockTransferSerializer(serializers.ModelSerializer):
             'id', 'product', 'product_name',
             'source_warehouse', 'source_warehouse_name',
             'destination_warehouse', 'destination_warehouse_name',
-            'quantity', 'locked_amount', 'status',
+            'quantity',  'status',
             'remarks', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['locked_amount', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
