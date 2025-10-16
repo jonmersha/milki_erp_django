@@ -132,7 +132,8 @@ inventory_router.register(r'product-packages', ProductPackageViewSet)
 inventory_router.register(r'products', ProductViewSet)
 inventory_router.register(r'stocks', StockViewSet)
 inventory_router.register(r'inventory-movements', InventoryMovementViewSet)
-inventory_router.register(r'stock-transfers', StockTransferViewSet) 
+inventory_router.register(r'stock-transfers', StockTransferViewSet, basename='stock-transfer')
+
 # Users Routes
 users_router.register(r'users', UserViewSet)
 
