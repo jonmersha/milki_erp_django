@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='company',
             name='city',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, related_name='cities', to='core.city'),
+            field=models.ForeignKey(default='CTY-20251012-36E', on_delete=django.db.models.deletion.PROTECT, related_name='cities', to='core.city'),
             preserve_default=False,
         ),
     ]

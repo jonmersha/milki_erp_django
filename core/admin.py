@@ -20,7 +20,7 @@ class CityAdmin(admin.ModelAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'status')
+    list_display = ('id', 'name','description','logo_url', 'city','status')
     search_fields = ('name',)
     list_filter = ('status',)
     ordering = ('name',)

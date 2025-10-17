@@ -272,6 +272,365 @@ class InventoryMovementLog(BaseModel):
 # models.py
 
 
+# class StockTransfer(BaseModel):
+#     STATUS_CHOICES = [
+#         ('PENDING', 'Pending'),
+#         ('IN_PROGRESS', 'In Progress'),
+#         ('COMPLETED', 'Completed'),
+#         ('CANCELLED', 'Cancelled'),
+#     ]
+
+#     id = models.CharField(
+#         max_length=16,
+#         primary_key=True,
+#         editable=False,
+#         unique=True
+#     )
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+#     source_warehouse = models.ForeignKey(
+#         Warehouse, on_delete=models.PROTECT, related_name="outgoing_transfers"
+#     )
+#     destination_warehouse = models.ForeignKey(
+#         Warehouse, on_delete=models.PROTECT, related_name="incoming_transfers"
+#     )
+#     quantity = models.PositiveIntegerField()
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+#     remarks = models.TextField(blank=True, null=True)
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['id'], name='unique_stock_transfer_id')
+#         ]
+
+#     def __str__(self):
+#         return f"Transfer {self.id} | {self.product.name} from {self.source_warehouse.name} to {self.destination_warehouse.name}"
+
+#     def clean(self):
+#         if self.source_warehouse == self.destination_warehouse:
+#             raise ValidationError("Source and destination warehouses must be different.")
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:
+#             partition = timezone.now().strftime("%Y%m%d")
+#             self.id = generate_custom_id(prefix="TRF", partition=partition, length=16)
+#         self.clean()
+#         super().save(*args, **kwargs)
+
+# -----------------------------
+# Inventory Transfer Logic
+    #Step 1: Check the amount existence in the source warehouse
+    #Step 2: Ictease Lock the amount in the source warehouse and deduct the amount from source warehouse
+    #Step 3: Create the transfer record in the transfer table with PENDING status
+    #Step 4: Authorize the transfer and change the status to IN_PROGRESS
+    #Step 5: Upon completion of the transfer decrement locked the amount in the source warehouse
+    #Step 6: Add the amount to the destination warehouse it can be new or existing stock
+    #Step 7: Change the status of the transfer to COMPLETED
+
+
+# # class StockTransfer(BaseModel):
+#     TRANSFER_STATUS = [
+#         ('PENDING', 'Pending'),
+#         ('IN_PROGRESS', 'In Progress'),
+#         ('COMPLETED', 'Completed'),
+#         ('CANCELLED', 'Cancelled'),
+#     ]
+
+#     id = models.CharField(max_length=20, primary_key=True, editable=False, unique=True)
+#     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='stock_transfers')
+#     quantity = models.DecimalField(max_digits=12, decimal_places=2)
+#     unit_of_measure = models.CharField(max_length=20, default='pcs')
+#     source_warehouse = models.ForeignKey('Warehouse', on_delete=models.CASCADE, related_name='outgoing_transfers')
+#     destination_warehouse = models.ForeignKey('Warehouse', on_delete=models.CASCADE, related_name='incoming_transfers')
+#     status = models.CharField(max_length=20, choices=TRANSFER_STATUS, default='PENDING')
+#     requested_date = models.DateTimeField(auto_now_add=True)
+#     authorized_date = models.DateTimeField(null=True, blank=True)
+#     completed_date = models.DateTimeField(null=True, blank=True)
+#     remarks = models.TextField(blank=True, null=True)
+
+#     class Meta:
+#         db_table = 'stock_transfer'
+#         ordering = ['-requested_date']
+#         verbose_name = 'Stock Transfer'
+#         verbose_name_plural = 'Stock Transfers'
+
+#     def __str__(self):
+#         return f"{self.id} - {self.product.name} ({self.quantity} {self.unit_of_measure})"
+
+#     def clean(self):
+#         if self.source_warehouse == self.destination_warehouse:
+#             raise ValidationError("Source and destination warehouses cannot be the same.")
+
+#     # def clean(self):
+#     #     """Ensure source and destination warehouses are different and stock is available."""
+#     #     if self.source_warehouse == self.destination_warehouse:
+#     #         raise ValidationError("Source and destination warehouse must be different.")
+
+#         # Check if product exists in source warehouse and has enough quantity
+#         try:
+#             source_stock = Stock.objects.get(product=self.product, warehouse=self.source_warehouse)
+#         except Stock.DoesNotExist:
+#             raise ValidationError(f"The product '{self.product.name}' does not exist in the source warehouse '{self.source_warehouse.name}'.")
+
+#         if source_stock.quantity < self.quantity:
+#             raise ValidationError(
+#                 f"Insufficient stock in source warehouse '{self.source_warehouse.name}'. "
+#                 f"Available: {source_stock.quantity}, requested: {self.quantity}"
+#             )
+
+#     @transaction.atomic
+#     def mark_completed(self):
+#         """Complete the transfer and adjust stock in both warehouses atomically."""
+#         if self.status == 'COMPLETED':
+#             return
+
+#         self.clean()  # Validate before performing transfer
+
+#         source_stock = Stock.objects.get(product=self.product, warehouse=self.source_warehouse)
+#         destination_stock, _ = Stock.objects.get_or_create(
+#             product=self.product,
+#             warehouse=self.destination_warehouse,
+#             defaults={'quantity': 0}
+#         )
+
+#         # Update both warehouses atomically
+#         source_stock.quantity -= self.quantity
+#         destination_stock.quantity += self.quantity
+#         source_stock.save(update_fields=['quantity', 'last_updated'])
+#         destination_stock.save(update_fields=['quantity', 'last_updated'])
+
+#         # Finalize transfer
+#         self.status = 'COMPLETED'
+#         self.completed_date = timezone.now()
+#         self.save(update_fields=['status', 'completed_date'])
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:
+#             partition = timezone.now().strftime("%Y%m%d")
+#             self.id = generate_custom_id(prefix="TRN", partition=partition, length=16)
+#         super().save(*args, **kwargs)
+
+
+# class StockTransfer(BaseModel):
+#     STATUS_CHOICES = [
+#         ('PENDING', 'Pending'),
+#         ('IN_PROGRESS', 'In Progress'),
+#         ('COMPLETED', 'Completed'),
+#         ('CANCELLED', 'Cancelled'),
+#     ]
+
+#     id = models.CharField(
+#         max_length=16,
+#         primary_key=True,
+#         editable=False,
+#         unique=True
+#     )
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+#     source_warehouse = models.ForeignKey(
+#         Warehouse, on_delete=models.PROTECT, related_name="outgoing_transfers"
+#     )
+#     destination_warehouse = models.ForeignKey(
+#         Warehouse, on_delete=models.PROTECT, related_name="incoming_transfers"
+#     )
+#     quantity = models.PositiveIntegerField()
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+#     remarks = models.TextField(blank=True, null=True)
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['id'], name='unique_stock_transfer_id')
+#         ]
+
+#     def __str__(self):
+#         return f"Transfer {self.id} | {self.product.name} from {self.source_warehouse.name} to {self.destination_warehouse.name}"
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:
+#             partition = timezone.now().strftime("%Y%m%d")
+#             self.id = generate_custom_id(prefix="TRF", partition=partition, length=16)
+
+#         self.clean()
+#         with transaction.atomic():
+#             source_stock = Stock.objects.select_for_update().filter(
+#                 warehouse=self.source_warehouse, product=self.product
+#             ).first()
+
+#             if not source_stock:
+#                 raise ValidationError("Source stock record not found.")
+#             if source_stock.quantity < self.quantity:
+#                 raise ValidationError("Insufficient stock in source warehouse.")
+
+#             is_new = self._state.adding
+#             previous = None
+#             if not is_new:
+#                 previous = StockTransfer.objects.select_for_update().get(pk=self.pk)
+
+#             # === NEW CREATION ===
+#             if is_new and self.status == "PENDING":
+#                 source_stock.quantity -= self.quantity
+#                 source_stock.locked_amount += self.quantity
+#                 source_stock.save()
+#                 self.locked_amount = self.quantity
+
+#             # === UPDATE WHILE PENDING ===
+#             elif previous and self.status == "PENDING":
+#                 if (
+#                     previous.quantity != self.quantity
+#                     or previous.product != self.product
+#                     or previous.source_warehouse != self.source_warehouse
+#                 ):
+#                     # revert previous lock
+#                     old_source = Stock.objects.filter(
+#                         warehouse=previous.source_warehouse, product=previous.product
+#                     ).first()
+#                     if old_source:
+#                         old_source.quantity += previous.locked_amount
+#                         old_source.locked_amount -= previous.locked_amount
+#                         old_source.save()
+
+#                     # apply new lock
+#                     if source_stock.quantity < self.quantity:
+#                         raise ValidationError("Insufficient stock in new source warehouse.")
+#                     source_stock.quantity -= self.quantity
+#                     source_stock.locked_amount += self.quantity
+#                     source_stock.save()
+#                     self.locked_amount = self.quantity
+
+#             # === COMPLETION ===
+#             elif self.status == "COMPLETED" and (not previous or previous.status != "COMPLETED"):
+#                 source_stock.locked_amount -= self.locked_amount
+#                 source_stock.save()
+
+#                 dest_stock, _ = Stock.objects.get_or_create(
+#                     warehouse=self.destination_warehouse,
+#                     product=self.product,
+#                     defaults={"quantity": 0},
+#                 )
+#                 dest_stock.quantity = F("quantity") + self.locked_amount
+#                 dest_stock.save()
+
+#             # === CANCELLATION ===
+#             elif self.status == "CANCELLED" and (not previous or previous.status != "CANCELLED"):
+#                 source_stock.quantity += self.locked_amount
+#                 source_stock.locked_amount -= self.locked_amount
+#                 source_stock.save()
+
+#         super().save(*args, **kwargs)
+
+#     def clean(self):
+#         if self.source_warehouse == self.destination_warehouse:
+#             raise ValidationError("Source and destination warehouses must be different.")
+# models.py
+
+# class StockTransfer(BaseModel):
+#     STATUS_CHOICES = [
+#         ('PENDING', 'Pending'),
+#         ('IN_PROGRESS', 'In Progress'),
+#         ('COMPLETED', 'Completed'),
+#         ('CANCELLED', 'Cancelled'),
+#     ]
+
+#     id = models.CharField(
+#         max_length=16,
+#         primary_key=True,
+#         editable=False,
+#         unique=True
+#     )
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+#     source_warehouse = models.ForeignKey(
+#         Warehouse, on_delete=models.PROTECT, related_name="outgoing_transfers"
+#     )
+#     destination_warehouse = models.ForeignKey(
+#         Warehouse, on_delete=models.PROTECT, related_name="incoming_transfers"
+#     )
+#     quantity = models.PositiveIntegerField()
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+#     remarks = models.TextField(blank=True, null=True)
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['id'], name='unique_stock_transfer_id')
+#         ]
+
+#     def __str__(self):
+#         return f"Transfer {self.id} | {self.product.name} from {self.source_warehouse.name} to {self.destination_warehouse.name}"
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:
+#             partition = timezone.now().strftime("%Y%m%d")
+#             self.id = generate_custom_id(prefix="TRF", partition=partition, length=16)
+
+#         self.clean()
+#         with transaction.atomic():
+#             source_stock = Stock.objects.select_for_update().filter(
+#                 warehouse=self.source_warehouse, product=self.product
+#             ).first()
+
+#             if not source_stock:
+#                 raise ValidationError("Source stock record not found.")
+#             if source_stock.quantity < self.quantity:
+#                 raise ValidationError("Insufficient stock in source warehouse.")
+
+#             is_new = self._state.adding
+#             previous = None
+#             if not is_new:
+#                 previous = StockTransfer.objects.select_for_update().get(pk=self.pk)
+
+#             # === NEW CREATION ===
+#             if is_new and self.status == "PENDING":
+#                 source_stock.quantity -= self.quantity
+#                 source_stock.locked_amount += self.quantity
+#                 source_stock.save()
+#                 self.locked_amount = self.quantity
+
+#             # === UPDATE WHILE PENDING ===
+#             elif previous and self.status == "PENDING":
+#                 if (
+#                     previous.quantity != self.quantity
+#                     or previous.product != self.product
+#                     or previous.source_warehouse != self.source_warehouse
+#                 ):
+#                     # revert previous lock
+#                     old_source = Stock.objects.filter(
+#                         warehouse=previous.source_warehouse, product=previous.product
+#                     ).first()
+#                     if old_source:
+#                         old_source.quantity += previous.locked_amount
+#                         old_source.locked_amount -= previous.locked_amount
+#                         old_source.save()
+
+#                     # apply new lock
+#                     if source_stock.quantity < self.quantity:
+#                         raise ValidationError("Insufficient stock in new source warehouse.")
+#                     source_stock.quantity -= self.quantity
+#                     source_stock.locked_amount += self.quantity
+#                     source_stock.save()
+#                     self.locked_amount = self.quantity
+
+#             # === COMPLETION ===
+#             elif self.status == "COMPLETED" and (not previous or previous.status != "COMPLETED"):
+#                 source_stock.locked_amount -= self.locked_amount
+#                 source_stock.save()
+
+#                 dest_stock, _ = Stock.objects.get_or_create(
+#                     warehouse=self.destination_warehouse,
+#                     product=self.product,
+#                     defaults={"quantity": 0},
+#                 )
+#                 dest_stock.quantity = F("quantity") + self.locked_amount
+#                 dest_stock.save()
+
+#             # === CANCELLATION ===
+#             elif self.status == "CANCELLED" and (not previous or previous.status != "CANCELLED"):
+#                 source_stock.quantity += self.locked_amount
+#                 source_stock.locked_amount -= self.locked_amount
+#                 source_stock.save()
+
+#         super().save(*args, **kwargs)
+
+#     def clean(self):
+#         if self.source_warehouse == self.destination_warehouse:
+#             raise ValidationError("Source and destination warehouses must be different.")
+
 class StockTransfer(BaseModel):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
@@ -280,12 +639,7 @@ class StockTransfer(BaseModel):
         ('CANCELLED', 'Cancelled'),
     ]
 
-    id = models.CharField(
-        max_length=16,
-        primary_key=True,
-        editable=False,
-        unique=True
-    )
+    id = models.CharField(max_length=16, primary_key=True, editable=False, unique=True)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     source_warehouse = models.ForeignKey(
         Warehouse, on_delete=models.PROTECT, related_name="outgoing_transfers"
@@ -296,6 +650,8 @@ class StockTransfer(BaseModel):
     quantity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
@@ -313,99 +669,42 @@ class StockTransfer(BaseModel):
         if not self.id:
             partition = timezone.now().strftime("%Y%m%d")
             self.id = generate_custom_id(prefix="TRF", partition=partition, length=16)
+
         self.clean()
+
+        with transaction.atomic():
+            source_stock = Stock.objects.select_for_update().filter(
+                warehouse=self.source_warehouse, product=self.product
+            ).first()
+
+            if not source_stock:
+                raise ValidationError("Source stock record not found.")
+
+            is_new = self._state.adding
+            previous = None
+            if not is_new:
+                previous = StockTransfer.objects.select_for_update().get(pk=self.pk)
+
+            # === CREATION ===
+            if is_new and self.status == "PENDING":
+                if source_stock.quantity < self.quantity:
+                    raise ValidationError("Insufficient stock in source warehouse.")
+                source_stock.quantity -= self.quantity
+                source_stock.save(update_fields=["quantity"])
+
+            # === COMPLETION ===
+            elif self.status == "COMPLETED" and (not previous or previous.status != "COMPLETED"):
+                dest_stock, _ = Stock.objects.get_or_create(
+                    warehouse=self.destination_warehouse,
+                    product=self.product,
+                    defaults={"quantity": 0}
+                )
+                dest_stock.quantity += self.quantity
+                dest_stock.save(update_fields=["quantity"])
+
+            # === CANCELLATION ===
+            elif self.status == "CANCELLED" and (not previous or previous.status != "CANCELLED"):
+                source_stock.quantity += self.quantity
+                source_stock.save(update_fields=["quantity"])
+
         super().save(*args, **kwargs)
-
-# -----------------------------
-# Inventory Transfer Logic
-    #Step 1: Check the amount existence in the source warehouse
-    #Step 2: Ictease Lock the amount in the source warehouse and deduct the amount from source warehouse
-    #Step 3: Create the transfer record in the transfer table with PENDING status
-    #Step 4: Authorize the transfer and change the status to IN_PROGRESS
-    #Step 5: Upon completion of the transfer decrement locked the amount in the source warehouse
-    #Step 6: Add the amount to the destination warehouse it can be new or existing stock
-    #Step 7: Change the status of the transfer to COMPLETED
-
-
-class StockTransfer(BaseModel):
-    TRANSFER_STATUS = [
-        ('PENDING', 'Pending'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
-    ]
-
-    id = models.CharField(max_length=20, primary_key=True, editable=False, unique=True)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='stock_transfers')
-    quantity = models.DecimalField(max_digits=12, decimal_places=2)
-    unit_of_measure = models.CharField(max_length=20, default='pcs')
-    source_warehouse = models.ForeignKey('Warehouse', on_delete=models.CASCADE, related_name='outgoing_transfers')
-    destination_warehouse = models.ForeignKey('Warehouse', on_delete=models.CASCADE, related_name='incoming_transfers')
-    status = models.CharField(max_length=20, choices=TRANSFER_STATUS, default='PENDING')
-    requested_date = models.DateTimeField(auto_now_add=True)
-    authorized_date = models.DateTimeField(null=True, blank=True)
-    completed_date = models.DateTimeField(null=True, blank=True)
-    remarks = models.TextField(blank=True, null=True)
-
-    class Meta:
-        db_table = 'stock_transfer'
-        ordering = ['-requested_date']
-        verbose_name = 'Stock Transfer'
-        verbose_name_plural = 'Stock Transfers'
-
-    def __str__(self):
-        return f"{self.id} - {self.product.name} ({self.quantity} {self.unit_of_measure})"
-
-    def clean(self):
-        if self.source_warehouse == self.destination_warehouse:
-            raise ValidationError("Source and destination warehouses cannot be the same.")
-
-    # def clean(self):
-    #     """Ensure source and destination warehouses are different and stock is available."""
-    #     if self.source_warehouse == self.destination_warehouse:
-    #         raise ValidationError("Source and destination warehouse must be different.")
-
-        # Check if product exists in source warehouse and has enough quantity
-        try:
-            source_stock = Stock.objects.get(product=self.product, warehouse=self.source_warehouse)
-        except Stock.DoesNotExist:
-            raise ValidationError(f"The product '{self.product.name}' does not exist in the source warehouse '{self.source_warehouse.name}'.")
-
-        if source_stock.quantity < self.quantity:
-            raise ValidationError(
-                f"Insufficient stock in source warehouse '{self.source_warehouse.name}'. "
-                f"Available: {source_stock.quantity}, requested: {self.quantity}"
-            )
-
-    @transaction.atomic
-    def mark_completed(self):
-        """Complete the transfer and adjust stock in both warehouses atomically."""
-        if self.status == 'COMPLETED':
-            return
-
-        self.clean()  # Validate before performing transfer
-
-        source_stock = Stock.objects.get(product=self.product, warehouse=self.source_warehouse)
-        destination_stock, _ = Stock.objects.get_or_create(
-            product=self.product,
-            warehouse=self.destination_warehouse,
-            defaults={'quantity': 0}
-        )
-
-        # Update both warehouses atomically
-        source_stock.quantity -= self.quantity
-        destination_stock.quantity += self.quantity
-        source_stock.save(update_fields=['quantity', 'last_updated'])
-        destination_stock.save(update_fields=['quantity', 'last_updated'])
-
-        # Finalize transfer
-        self.status = 'COMPLETED'
-        self.completed_date = timezone.now()
-        self.save(update_fields=['status', 'completed_date'])
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            partition = timezone.now().strftime("%Y%m%d")
-            self.id = generate_custom_id(prefix="TRN", partition=partition, length=16)
-        super().save(*args, **kwargs)
-

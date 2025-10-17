@@ -103,48 +103,47 @@ class InventoryMovementLogAdmin(admin.ModelAdmin):
         return obj.warehouse.name if obj.warehouse else None
     get_warehouse.short_description = 'Warehouse'
 
+# -----------------------------
+# StockTransfer Admin
+# -----------------------------
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "product",
-        "quantity",
-        "unit_of_measure",
         "source_warehouse",
         "destination_warehouse",
+        "quantity",
         "status",
-        "requested_date",
-        "authorized_date",
-        "completed_date",
+        "created_at",
+        "updated_at",
     )
-
-    list_filter = ("status", "requested_date", "authorized_date", "completed_date")
-    search_fields = (
-        "id",
-        "product__name",
-        "source_warehouse__name",
-        "destination_warehouse__name",
-    )
-    readonly_fields = ("id", "requested_date", "authorized_date", "completed_date")
-    ordering = ("-requested_date",)
-
+    list_filter = ("status", "source_warehouse", "destination_warehouse", "product")
+    search_fields = ("id", "product__name", "source_warehouse__name", "destination_warehouse__name")
+    readonly_fields = ("id", "created_at", "updated_at")
+    ordering = ("-created_at",)
     fieldsets = (
         ("Transfer Details", {
             "fields": (
+                "id",
                 "product",
-                "quantity",
-                "unit_of_measure",
                 "source_warehouse",
                 "destination_warehouse",
+                "quantity",
                 "status",
                 "remarks",
             )
         }),
-        ("Dates", {
-            "fields": (
-                "requested_date",
-                "authorized_date",
-                "completed_date",
-            )
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
         }),
     )
+
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Prevent editing certain fields after creation.
+        """
+        if obj:  # when editing existing transfer
+            return self.readonly_fields + ("product", "source_warehouse", "destination_warehouse")
+        return self.readonly_fields
