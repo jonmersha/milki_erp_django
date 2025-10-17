@@ -6,13 +6,27 @@ from .models import (
     Payment, Invoice
 )
 
-# -----------------------------
-# Inline Classes
-# -----------------------------
 class PurchaseOrderItemInline(admin.TabularInline):
     model = PurchaseOrderItem
     extra = 1
-    readonly_fields = ('total_price',)
+
+
+@admin.register(PurchaseOrder)
+class PurchaseOrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'destination_store', 'supplier', 'order_date', 'status']
+    inlines = [PurchaseOrderItemInline]
+    list_filter = ['status', 'destination_store', 'supplier']
+    search_fields = ['id', 'supplier__Supplier_name', 'destination_store__warehouse_name']
+
+
+@admin.register(PurchaseOrderItem)
+class PurchaseOrderItemAdmin(admin.ModelAdmin):
+    list_display = ['id', 'purchase_order', 'product', 'quantity', 'unit_price', 'status', 'total_price']
+    list_filter = ['status', 'product']
+    search_fields = ['id', 'product__product_name', 'purchase_order__id']
+
+
+
 
 
 class SalesOrderItemInline(admin.TabularInline):
@@ -40,24 +54,24 @@ class CustomerAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 
 
-# -----------------------------
-# Purchase Orders
-# -----------------------------
-@admin.register(PurchaseOrder)
-class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'supplier', 'order_date', 'status')
-    list_filter = ('status', 'order_date', 'supplier')
-    search_fields = ('id', 'supplier__name')
-    ordering = ('-order_date',)
-    inlines = [PurchaseOrderItemInline]
+# # -----------------------------
+# # Purchase Orders
+# # -----------------------------
+# @admin.register(PurchaseOrder)
+# class PurchaseOrderAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'supplier', 'order_date', 'status')
+#     list_filter = ('status', 'order_date', 'supplier')
+#     search_fields = ('id', 'supplier__name')
+#     ordering = ('-order_date',)
+#     inlines = [PurchaseOrderItemInline]
 
 
-@admin.register(PurchaseOrderItem)
-class PurchaseOrderItemAdmin(admin.ModelAdmin):
-    list_display = ('purchase_order', 'product', 'quantity', 'unit_price', 'status', 'total_price')
-    list_filter = ('status', 'product')
-    search_fields = ('product__name', 'purchase_order__id')
-    readonly_fields = ('total_price',)
+# @admin.register(PurchaseOrderItem)
+# class PurchaseOrderItemAdmin(admin.ModelAdmin):
+#     list_display = ('purchase_order', 'product', 'quantity', 'unit_price', 'status', 'total_price')
+#     list_filter = ('status', 'product')
+#     search_fields = ('product__name', 'purchase_order__id')
+#     readonly_fields = ('total_price',)
 
 
 # -----------------------------

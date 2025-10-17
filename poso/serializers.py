@@ -37,10 +37,7 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrderItem
-        fields = [
-            'id', 'purchase_order', 'product', 'quantity', 'unit_price',
-            'status', 'total_price', 'created_at', 'updated_at'
-        ]
+        fields = ['id', 'purchase_order', 'product', 'quantity', 'unit_price', 'status', 'total_price']
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
@@ -48,12 +45,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrder
-        fields = [
-            'id', 'supplier', 'order_date', 'status',
-            'created_at', 'updated_at', 'items'
-        ]
-
-
+        fields = ['id', 'destination_store', 'supplier', 'order_date', 'status', 'items']
 # -----------------------------
 # Sales Orders
 # -----------------------------

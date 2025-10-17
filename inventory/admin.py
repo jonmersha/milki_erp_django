@@ -69,6 +69,41 @@ class StockAdmin(admin.ModelAdmin):
 # -----------------------------
 # InventoryMovement Admin
 # -----------------------------
+
+@admin.register(InventoryMovementLog)
+class InventoryMovementLogAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'product',
+        'movement_type',
+        'reason',
+        'quantity',
+        'unit_price',
+        'source_warehouse',
+        'destination_warehouse',
+        'date',
+        'status'
+    ]
+    list_filter = [
+        'movement_type',
+        'reason',
+        'status',
+        'source_warehouse',
+        'destination_warehouse',
+        'product'
+    ]
+    search_fields = [
+        'id',
+        'product__name',
+        'remarks',
+        'source_warehouse__name',
+        'destination_warehouse__name'
+    ]
+    readonly_fields = [
+        'id',
+        'date'
+    ]
+    ordering = ['-date']
 # @admin.register(InventoryMovementLog)
 # class InventoryMovementLogAdmin(admin.ModelAdmin):
 #     list_display = (

@@ -147,7 +147,9 @@ class InventoryMovementLogSerializer(serializers.ModelSerializer):
 
 
 
-
+#--------------------------------------
+#Stock Transfer Serilaizr
+#-----------------------------------------
 class StockTransferSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     source_warehouse_name = serializers.CharField(source="source_warehouse.name", read_only=True)
