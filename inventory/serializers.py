@@ -90,14 +90,61 @@ class StockSerializer(serializers.ModelSerializer):
 # -----------------------------
 # InventoryMovement
 # -----------------------------
-class InventoryMovementSerializer(serializers.ModelSerializer):
+
+
+class InventoryMovementLogSerializer(serializers.ModelSerializer):
+    # Read-only helper fields for human-friendly display
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    source_warehouse_name = serializers.CharField(
+        source='source_warehouse.name', read_only=True
+    )
+    destination_warehouse_name = serializers.CharField(
+        source='destination_warehouse.name', read_only=True
+    )
+
     class Meta:
         model = InventoryMovementLog
         fields = [
-            'id', 'product', 'date', 'quantity', 'movement_type',
-            'warehouse', 'unit_price',
-            'remarks', 'status', 'created_at', 'updated_at'
+            'id',
+            'product', 'product_name',
+            'date', 'quantity',
+            'movement_type', 'reason',
+            'source_warehouse', 'source_warehouse_name',
+            'destination_warehouse', 'destination_warehouse_name',
+            'unit_price', 'remarks',
+            'status', 'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'date', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        """
+        Validate movement logic consistency:
+        - Outbound requires a source warehouse.
+        - Inbound requires a destination warehouse.
+        - Transfer requires both.
+        """
+        movement_type = data.get('movement_type')
+        reason = data.get('reason')
+        source = data.get('source_warehouse')
+        destination = data.get('destination_warehouse')
+
+        if movement_type == 'outbound' and not source:
+            raise serializers.ValidationError("Outbound movement requires a source warehouse.")
+
+        if movement_type == 'inbound' and not destination:
+            raise serializers.ValidationError("Inbound movement requires a destination warehouse.")
+
+        if reason == 'transfer':
+            if not source or not destination:
+                raise serializers.ValidationError("Transfer movements require both source and destination warehouses.")
+            if source == destination:
+                raise serializers.ValidationError("Source and destination warehouses must be different.")
+
+        if data.get('quantity', 0) <= 0:
+            raise serializers.ValidationError("Quantity must be greater than zero.")
+
+        return data
+
 
 
 

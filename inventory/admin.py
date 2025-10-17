@@ -69,39 +69,39 @@ class StockAdmin(admin.ModelAdmin):
 # -----------------------------
 # InventoryMovement Admin
 # -----------------------------
-@admin.register(InventoryMovementLog)
-class InventoryMovementLogAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'product',
-        'date',
-        'movement_type',
-        'reason',
-        'get_warehouse',
-        'quantity',
-        'unit_price',
-        'status'
-    )
+# @admin.register(InventoryMovementLog)
+# class InventoryMovementLogAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'id',
+#         'product',
+#         'date',
+#         'movement_type',
+#         'reason',
+#         'get_warehouse',
+#         'quantity',
+#         'unit_price',
+#         'status'
+#     )
 
-    list_filter = (
-        'movement_type',
-        'reason',
-        'status',
-        'date',
-        'warehouse'
-    )
+#     list_filter = (
+#         'movement_type',
+#         'reason',
+#         'status',
+#         'date',
+#         'warehouse'
+#     )
 
-    search_fields = (
-        'id',
-        'product__name',
-        'remarks'
-    )
+#     search_fields = (
+#         'id',
+#         'product__name',
+#         'remarks'
+#     )
 
-    ordering = ('-date',)
+#     ordering = ('-date',)
 
-    def get_warehouse(self, obj):
-        return obj.warehouse.name if obj.warehouse else None
-    get_warehouse.short_description = 'Warehouse'
+#     def get_warehouse(self, obj):
+#         return obj.warehouse.name if obj.warehouse else None
+#     get_warehouse.short_description = 'Warehouse'
 
 # -----------------------------
 # StockTransfer Admin
