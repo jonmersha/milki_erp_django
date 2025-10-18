@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from rest_framework import viewsets,status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -48,10 +49,76 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+# class SalesOrderItemViewSet(viewsets.ModelViewSet):
+#     queryset = SalesOrderItem.objects.all()
+#     serializer_class = SalesOrderItemSerializer
+#     permission_classes = [IsAuthenticated]
+
+# class SalesOrderItemViewSet(viewsets.ModelViewSet):
+#     queryset = SalesOrderItem.objects.all()
+#     serializer_class = SalesOrderItemSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def create(self, request, *args, **kwargs):
+#         with transaction.atomic():
+#             serializer = self.get_serializer(data=request.data)
+#             serializer.is_valid(raise_exception=True)
+#             item = serializer.save()
+#             return Response(self.get_serializer(item).data, status=status.HTTP_201_CREATED)
+
+#     def update(self, request, *args, **kwargs):
+#         instance = self.get_object()
+
+#         # Only pending or confirmed items can be updated
+#         if instance.status in ["DELIVERED"]:
+#             return Response(
+#                 {"detail": "Cannot update items that are already delivered."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
+#         with transaction.atomic():
+#             serializer = self.get_serializer(instance, data=request.data, partial=True)
+#             serializer.is_valid(raise_exception=True)
+#             serializer.save()
+#             return Response(serializer.data)
+
+
 class SalesOrderItemViewSet(viewsets.ModelViewSet):
-    queryset = SalesOrderItem.objects.all()
+    queryset = SalesOrderItem.objects.all().select_related("sales_order", "product")
     serializer_class = SalesOrderItemSerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        """Create item and apply model-level stock logic."""
+        sales_order = serializer.validated_data["sales_order"]
+        product = serializer.validated_data["product"]
+
+        if SalesOrderItem.objects.filter(sales_order=sales_order, product=product).exists():
+            raise ValidationError("This product already exists in the sales order.")
+
+        serializer.save()
+
+    def perform_update(self, serializer):
+        """Update item safely."""
+        instance = self.get_object()
+        if instance.status not in ["PENDING", "CONFIRMED"]:
+            raise ValidationError("Only PENDING or CONFIRMED items can be updated.")
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        """Cancel the item, not delete it."""
+        instance = self.get_object()
+        if instance.status not in ["PENDING", "CONFIRMED"]:
+            return Response(
+                {"detail": "Only PENDING or CONFIRMED items can be cancelled."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            instance.process_cancellation()
+            instance.save(update_fields=["status"])
+        return Response({"detail": "Sales Order Item cancelled successfully."}, status=status.HTTP_200_OK)
+
 
 
 class PaymentViewSet(viewsets.ModelViewSet):

@@ -122,6 +122,11 @@ class SalesOrder(BaseModel):
         editable=False,
         unique=True
     )
+    source_store = models.ForeignKey(
+        Warehouse,
+        on_delete=models.PROTECT,
+        related_name='sales_orders'
+    )
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, blank=True)
     order_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES,default='draft')
@@ -138,32 +143,325 @@ class SalesOrder(BaseModel):
 #-----------------------------
 
         
+# class SalesOrderItem(BaseModel):
+#     id = models.CharField(
+#         max_length=16,
+#         primary_key=True,
+#         editable=False,
+#         unique=True
+#     )
+#     sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+#     quantity = models.IntegerField()
+#     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:
+#             partition = timezone.now().strftime("%Y%m%d")
+#             self.id = generate_custom_id(prefix="SOI", partition=partition, length=16)
+#         super().save(*args, **kwargs)
+
+
+#     @property
+#     def total_price(self):
+#         return self.quantity * self.unit_price
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['sales_order', 'product'], name='unique_product_per_SO')
+#         ]
+
+# class SalesOrderItem(BaseModel):
+#     STATUS_CHOICES = [
+#         ('pending', 'Pending'),
+#         ('dispatched', 'Dispatched'),
+#         ('delivered', 'Delivered'),
+#     ]
+
+#     id = models.CharField(
+#         max_length=16,
+#         primary_key=True,
+#         editable=False,
+#         unique=True
+#     )
+#     sales_order = models.ForeignKey(
+#         SalesOrder,
+#         on_delete=models.CASCADE,
+#         related_name='items'
+#     )
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+#     quantity = models.IntegerField()
+#     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+#     def save(self, *args, **kwargs):
+#         from decimal import Decimal
+#         with transaction.atomic():
+#             # --- Generate ID if new ---
+#             if not self.id:
+#                 partition = timezone.now().strftime("%Y%m%d")
+#                 self.id = generate_custom_id(prefix="SOI", partition=partition, length=16)
+
+#             self.quantity = int(self.quantity)
+#             self.unit_price = Decimal(self.unit_price)
+
+#             # --- Check if duplicate item exists ---
+#             duplicate = SalesOrderItem.objects.select_for_update().filter(
+#                 sales_order=self.sales_order,
+#                 product=self.product
+#             ).exclude(pk=self.pk).first()
+
+#             if duplicate and duplicate.status == "pending":
+#                 # Merge quantities and keep updated price
+#                 duplicate.quantity += self.quantity
+#                 duplicate.unit_price = self.unit_price
+#                 if self.status in ["dispatched", "delivered"]:
+#                     duplicate.status = self.status
+#                     self._update_stock_and_log(duplicate)
+#                 duplicate.save(update_fields=['quantity', 'unit_price', 'status'])
+#                 return
+
+#             # --- Save normally (new or existing non-pending) ---
+#             super().save(*args, **kwargs)
+
+#             if self.status in ["dispatched", "delivered"]:
+#                 self._update_stock_and_log(self)
+
+#     def _update_stock_and_log(self, item):
+#         """Reduce stock and log outbound movement for a completed sale."""
+#         warehouse = item.sales_order.source_store
+#         stock = Stock.objects.select_for_update().filter(
+#             warehouse=warehouse,
+#             product=item.product
+#         ).first()
+
+#         if not stock:
+#             raise ValueError(f"Stock for {item.product.name} not found in warehouse {warehouse.name}")
+
+#         if stock.quantity < item.quantity:
+#             raise ValueError(f"Insufficient stock for {item.product.name}. Available: {stock.quantity}")
+
+#         # --- Deduct stock ---
+#         stock.quantity -= item.quantity
+#         stock.total_value = stock.quantity * stock.unit_price
+#         stock.remarks = f"Dispatched via SO {item.sales_order.id}"
+#         stock.save(update_fields=['quantity', 'total_value', 'remarks'])
+
+#         # --- Log inventory movement ---
+#         InventoryMovementLog.objects.create(
+#             product=item.product,
+#             quantity=item.quantity,
+#             movement_type='outbound',
+#             reason='sales',
+#             source_warehouse=warehouse,
+#             unit_price=item.unit_price,
+#             remarks=f"Dispatched via SO {item.sales_order.id}"
+#         )
+
+#     @property
+#     def total_price(self):
+#         return self.quantity * self.unit_price
+
+#     @property
+#     def warehouse_info(self):
+#         warehouse = self.sales_order.source_store
+#         return {
+#             "id": warehouse.id,
+#             "name": warehouse.name,
+#             "code": getattr(warehouse, "code", None),
+#             "address": getattr(warehouse, "address", None)
+#         }
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['sales_order', 'product'], name='unique_product_per_SO')
+#         ]
+
+# class SalesOrderItem(BaseModel):
+#     STATUS_CHOICES = [
+#         ('PENDING', 'Pending'),
+#         ('CONFIRMED', 'Confirmed'),
+#         ('DELIVERED', 'Delivered'),
+#         ('CANCELLED', 'Cancelled'),
+#     ]
+
+#     id = models.CharField(max_length=16, primary_key=True, editable=False, unique=True)
+#     sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+#     quantity = models.PositiveIntegerField()
+#     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+#     remarks = models.TextField(blank=True, null=True)
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['sales_order', 'product'], name='unique_product_per_SO')
+#         ]
+
+#     def save(self, *args, **kwargs):
+#         if not self.id:
+#             partition = timezone.now().strftime("%Y%m%d")
+#             self.id = generate_custom_id(prefix="SOI", partition=partition, length=16)
+
+#         with transaction.atomic():
+#             is_new = self._state.adding
+#             source_warehouse = self.sales_order.source_store
+#             stock = Stock.objects.select_for_update().filter(
+#                 warehouse=source_warehouse, product=self.product
+#             ).first()
+
+#             if not stock:
+#                 raise ValidationError("No stock record found for this product in the selected warehouse.")
+
+#             # --- Initial creation ---
+#             if is_new:
+#                 if stock.quantity < self.quantity:
+#                     raise ValidationError("Insufficient stock to fulfill this order.")
+#                 # Lock stock (reserve for this sale)
+#                 stock.quantity -= self.quantity
+#                 stock.locked_amount += self.quantity
+#                 stock.save(update_fields=["quantity", "locked_amount"])
+
+#             else:
+#                 prev = SalesOrderItem.objects.select_for_update().get(pk=self.pk)
+
+#                 # Prevent changes once fully delivered
+#                 if prev.status in ["DELIVERED"]:
+#                     raise ValidationError("Cannot modify a delivered item.")
+
+#                 # Handle cancellation
+#                 if self.status == "CANCELLED" and prev.status != "CANCELLED" and prev.status != "DELIVERED":
+#                     stock.quantity += prev.quantity
+#                     stock.locked_amount -= prev.quantity
+#                     stock.save(update_fields=["quantity", "locked_amount"])
+
+#                 # # Handle dispatch
+#                 # elif self.status == "DISPATCHED":
+#                 #     stock.locked_amount -= self.quantity
+#                 #     stock.save(update_fields=["locked_amount"])
+
+#                 #     InventoryMovementLog.objects.create(
+#                 #         product=self.product,
+#                 #         quantity=self.quantity,
+#                 #         movement_type='outbound',
+#                 #         reason='sales',
+#                 #         source_warehouse=source_warehouse,
+#                 #         remarks=f"Dispatched via Sales Order {self.sales_order.id}"
+#                 #     )
+
+#                 # Handle delivery (final stage) add to stock movement log
+
+#                 elif self.status == "DELIVERED":
+#                     stock.locked_amount -= self.quantity
+#                     stock.remarks = f"Delivered via Sales Order {self.sales_order.id} of quantity : {self.quantity}"
+#                     stock.save(update_fields=["locked_amount"])
+
+#                     InventoryMovementLog.objects.create(
+#                         product=self.product,
+#                         quantity=self.quantity,
+#                         movement_type='outbound',
+#                         reason='sales',
+#                         source_warehouse=source_warehouse,
+#                         remarks=f"Delivered via Sales Order {self.sales_order.id}"
+#                     )
+
+#             super().save(*args, **kwargs)
+
+#     @property
+#     def total_price(self):
+#         return self.quantity * self.unit_price
+
 class SalesOrderItem(BaseModel):
-    id = models.CharField(
-        max_length=16,
-        primary_key=True,
-        editable=False,
-        unique=True
-    )
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),
+        ('DELIVERED', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
+    id = models.CharField(max_length=16, primary_key=True, editable=False)
     sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    remarks = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['sales_order', 'product'])]
+
+    def clean(self):
+        """Basic validation before saving."""
+        if self._state.adding and self.status != 'PENDING':
+            raise ValidationError("New Sales Order Items must start with PENDING status.")
+
+        if self.quantity <= 0:
+            raise ValidationError("Quantity must be greater than zero.")
+
+    def adjust_stock(self, delta_locked=0, delta_qty=0, remarks=None):
+        """Utility to safely update stock quantities."""
+        stock = Stock.objects.select_for_update().filter(
+            warehouse=self.sales_order.source_store,
+            product=self.product
+        ).first()
+        if not stock:
+            raise ValidationError("No stock record found for this product in the selected warehouse.")
+
+        if delta_qty < 0 and stock.quantity < abs(delta_qty):
+            raise ValidationError("Insufficient stock to fulfill this order.")
+
+        stock.quantity += delta_qty
+        stock.locked_amount += delta_locked
+        if remarks:
+            stock.remarks = remarks
+        stock.save(update_fields=["quantity", "locked_amount", "remarks"])
+
+    def process_delivery(self):
+        """Handle delivery transition."""
+        self.adjust_stock(delta_locked=-self.quantity,
+                          remarks=f"Delivered via Sales Order {self.sales_order.id}, qty {self.quantity}")
+
+        InventoryMovementLog.objects.create(
+            product=self.product,
+            quantity=self.quantity,
+            movement_type='outbound',
+            reason='sales',
+            source_warehouse=self.sales_order.source_store,
+            remarks=f"Delivered via Sales Order {self.sales_order.id}"
+        )
+
+    def process_cancellation(self):
+        """Handle cancellation."""
+        self.adjust_stock(delta_locked=-self.quantity, delta_qty=+self.quantity)
+        self.status = "CANCELLED"
 
     def save(self, *args, **kwargs):
         if not self.id:
             partition = timezone.now().strftime("%Y%m%d")
             self.id = generate_custom_id(prefix="SOI", partition=partition, length=16)
-        super().save(*args, **kwargs)
 
+        with transaction.atomic():
+            is_new = self._state.adding
+            self.clean()
+
+            if is_new:
+                self.adjust_stock(delta_locked=+self.quantity, delta_qty=-self.quantity)
+            else:
+                prev = SalesOrderItem.objects.select_for_update().get(pk=self.pk)
+
+                if prev.status == "DELIVERED":
+                    raise ValidationError("Delivered items cannot be modified.")
+
+                if self.status == "DELIVERED" and prev.status != "DELIVERED":
+                    self.process_delivery()
+
+                elif self.status == "CANCELLED" and prev.status != "CANCELLED":
+                    self.process_cancellation()
+
+            super().save(*args, **kwargs)
 
     @property
     def total_price(self):
         return self.quantity * self.unit_price
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['sales_order', 'product'], name='unique_product_per_SO')
-        ]
 
 
 # -----------------------------
@@ -218,6 +516,8 @@ class Invoice(BaseModel):
 
     def __str__(self):
         return f"Invoice-{self.id}"
+
+
 
 class PurchaseOrderItem(BaseModel):
     STATUS_CHOICES = [

@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'debug_toolbar',
-    
+    'sales',
+    'purchase',
     'core',
     'users',
     'inventory',

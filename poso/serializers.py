@@ -51,13 +51,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 # -----------------------------
 class SalesOrderItemSerializer(serializers.ModelSerializer):
     total_price = serializers.ReadOnlyField()
-    product = ProductSerializer().read_only=True
+    # product = ProductSerializer().read_only=True
 
     class Meta:
         model = SalesOrderItem
         fields = [
-            'id', 'sales_order', 'product', 'quantity', 'unit_price',
-            'total_price', 'created_at', 'updated_at'
+            'id', 'sales_order', 'product', 'quantity', 'unit_price','total_price', 'created_at', 'status','updated_at'
         ]
 
 
