@@ -12,7 +12,7 @@ class BaseModel(models.Model):
     authorized_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
-        null=True,
+    null=True,
         blank=True,
         editable=False,  # hide from admin/forms
         related_name='authorized_%(class)s_set'
@@ -28,3 +28,5 @@ class BaseModel(models.Model):
         if self.is_authorized and self.authorization_time is None:
             self.authorization_time = timezone.now()
         super().save(*args, **kwargs)
+# class UserAction(models.Model):
+    

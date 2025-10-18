@@ -1,3 +1,18 @@
+from django.db import models
+
+from poso.models import Customer
+
+class SalerOrder(models.Model):
+    id=models.CharField(max_length=20,primary_key=True,editable=False)
+    customer=models.ForeignKey(
+        Customer,
+        on_delete=models.PROTECT,
+        null=False,blank=False,editable=False)
+    order_status=models.CharField(default='Pending')
+    order_date=models.DateTimeField(auto_now=True)
+
+
+
 from django.db import models, transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
