@@ -1,203 +1,293 @@
 from django.db import models
-
+from core.base import BaseModel
+from inventory.models import Stock, Warehouse
 from poso.models import Customer
+from core.utility.uuidgen import cid
+from django.db.models import F
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 
-class SalerOrder(models.Model):
+
+class SalesOrder(models.Model):
+    ORDER_OPTIONS = [
+        ('Pending', 'Pending'),
+        ('Confirmed', 'Confirmed'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled'),
+    ]
+    payment_status_options = [
+        ('Unpaid', 'Unpaid'),
+        ('Paid', 'Paid'),
+        ('Refunded', 'Refunded'),
+    ]
     id=models.CharField(max_length=20,primary_key=True,editable=False)
-    customer=models.ForeignKey(
-        Customer,
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, null=True, blank=True,related_name='sales_orders')
+    order_status=models.CharField(max_length=20,choices=ORDER_OPTIONS,default='Pending')
+    order_date=models.DateTimeField(auto_now_add=True)
+    payment_status=models.CharField(max_length=20,choices=payment_status_options,default='Unpaid')
+
+
+    def save(self, *args, **kwargs):
+       if not self.id:
+           self.id = cid(prefix="SO", length=16)
+       super().save(*args, **kwargs)
+    def __str__(self):
+        return f"Order {self.id} for {self.customer}"
+    
+
+
+
+# --------------------------------------------------------------------------
+# Sales Item Model
+class SalesItem(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Confirmed', 'Confirmed'),
+        ('Delivered', 'Delivered'),
+        ('Cancelled', 'Cancelled'),
+    ]
+    PAYMENT_STATUS_CHOICES = [
+        ('Unpaid', 'Unpaid'),
+        ('Paid', 'Paid'),
+        ('Refunded', 'Refunded'),
+    ]
+
+    id=models.CharField(max_length=20,primary_key=True,editable=False)
+    sale_order=models.ForeignKey(
+        SalesOrder,
+        on_delete=models.CASCADE,
+        null=False,blank=False,editable=True)
+    product_name=models.ForeignKey(
+        'inventory.Product',
         on_delete=models.PROTECT,
-        null=False,blank=False,editable=False)
-    order_status=models.CharField(default='Pending')
-    order_date=models.DateTimeField(auto_now=True)
-
-
-
-from django.db import models, transaction
-from django.utils import timezone
-from django.core.exceptions import ValidationError
-from core.models import BaseModel, Warehouse
-from core.utility.uuidgen import generate_custom_id
-from inventory.models import Stock, InventoryMovementLog
-# from finance.models import Payment
-from decimal import Decimal
-
-
-class Customer(BaseModel):
-    id = models.CharField(max_length=16, primary_key=True, editable=False)
-    name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
-    address = models.TextField(blank=True, null=True)
-    status = models.CharField(max_length=20, default='active')
+        null=False,blank=False,editable=True)
+    source_whouse=models.ForeignKey(
+        Warehouse,
+        on_delete=models.PROTECT,
+        null=False,blank=False,editable=True)
+    inventory=models.ForeignKey(
+        Stock,
+        on_delete=models.PROTECT,
+        null=False,blank=False,editable=True)
+    
+    quantity=models.PositiveIntegerField()
+    price=models.DecimalField(max_digits=10, decimal_places=2)
+    total_price=models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
+    status=models.CharField(default='Pending',max_length=20,choices=STATUS_CHOICES)
+    payment_status=models.CharField(default='Unpaid',max_length=20,choices=PAYMENT_STATUS_CHOICES)
+    reg_date=models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.id:
-            partition = timezone.now().strftime("%Y%m%d")
-            self.id = generate_custom_id(prefix="CUS", partition=partition, length=16)
-        super().save(*args, **kwargs)
+        self.total_price = self.price * self.quantity
+        inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
 
-    def __str__(self):
-        return self.name
-
-
-class SalesOrder(BaseModel):
-    STATUS_CHOICES = [
-        ('DRAFT', 'Draft'),
-        ('CONFIRMED', 'Confirmed'),
-        ('PARTIALLY_DELIVERED', 'Partially Delivered'),
-        ('DELIVERED', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-    ]
-
-    PAYMENT_STATUS_CHOICES = [
-        ('UNPAID', 'Unpaid'),
-        ('PARTIALLY_PAID', 'Partially Paid'),
-        ('PAID', 'Paid'),
-    ]
-
-    id = models.CharField(max_length=16, primary_key=True, editable=False)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='orders')
-    order_date = models.DateField(default=timezone.now)
-    source_store = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='DRAFT')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='UNPAID')
-    total_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
-    remarks = models.TextField(blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            partition = timezone.now().strftime("%Y%m%d")
-            self.id = generate_custom_id(prefix="SO", partition=partition, length=16)
-        super().save(*args, **kwargs)
-
-    # --- Helpers ---
-    def recalc_total(self):
-        total = self.items.aggregate(total=models.Sum(models.F('quantity') * models.F('unit_price')))['total'] or Decimal('0.00')
-        self.total_amount = total
-        self.save(update_fields=['total_amount'])
-
-    def update_status(self):
-        items = self.items.all()
-        if not items.exists():
-            self.status = 'DRAFT'
-        elif all(i.status == 'DELIVERED' for i in items):
-            self.status = 'DELIVERED'
-        elif any(i.status == 'DELIVERED' for i in items):
-            self.status = 'PARTIALLY_DELIVERED'
-        elif all(i.status == 'CANCELLED' for i in items):
-            self.status = 'CANCELLED'
+        if inventory_record:
+            if inventory_record.quantity < self.quantity:
+                return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
+            self.inventory = inventory_record
         else:
-            self.status = 'CONFIRMED'
-        self.save(update_fields=['status'])
+            raise {"detail": "No inventory record found for the specified product and warehouse."}
 
-    def update_payment_status(self):
-        total_paid = sum(p.amount for p in self.payments.filter(status='paid'))
-        if total_paid <= 0:
-            new_status = 'UNPAID'
-        elif total_paid < self.total_amount:
-            new_status = 'PARTIALLY_PAID'
-        else:
-            new_status = 'PAID'
-        self.payment_status = new_status
-        self.save(update_fields=["payment_status"])
-        self.items.update(payment_status=new_status)
-
-    def __str__(self):
-        return f"Sales Order {self.id} - {self.customer.name}"
-
-
-class SalesOrderItem(BaseModel):
-    STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('DELIVERED', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-    ]
-
-    PAYMENT_STATUS_CHOICES = [
-        ('UNPAID', 'Unpaid'),
-        ('PARTIALLY_PAID', 'Partially Paid'),
-        ('PAID', 'Paid'),
-    ]
-
-    id = models.CharField(max_length=16, primary_key=True, editable=False)
-    sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField()
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='UNPAID')
-    remarks = models.TextField(blank=True, null=True)
-
-    class Meta:
-        indexes = [models.Index(fields=['sales_order', 'product'])]
-
-    @property
-    def total_price(self):
-        return self.quantity * self.unit_price
-
-    def save(self, *args, **kwargs):
         if not self.id:
-            partition = timezone.now().strftime("%Y%m%d")
-            self.id = generate_custom_id(prefix="SOI", partition=partition, length=16)
+            self.id = cid(prefix="SI")
 
         with transaction.atomic():
-            is_new = self._state.adding
-            stock = Stock.objects.select_for_update().filter(
-                warehouse=self.sales_order.source_store, product=self.product
-            ).first()
+            if self.status == 'Pending':
+                # Lock the row to prevent race conditions
+                existing_item = SalesItem.objects.select_for_update().filter(
+                    sale_order=self.sale_order,
+                    product_name=self.product_name,
+                    status='Pending'
+                ).first()
 
-            if not stock:
-                raise ValidationError("Stock not found for this product.")
+                if existing_item:
+                    # Merge safely inside transaction
+                    existing_item.quantity += self.quantity
+                    existing_item.price += self.price
+                    existing_item.total_price = existing_item.quantity * existing_item.price
+                    existing_item.save(update_fields=['quantity', 'price', 'total_price'])
+                    return existing_item  # return merged object
+                else:
+                    # No existing pending item, save new
+                    super().save(*args, **kwargs)
+                    return self
 
-            if is_new:
-                if stock.quantity < self.quantity:
-                    raise ValidationError("Insufficient stock.")
-                stock.quantity -= self.quantity
-                stock.locked_amount += self.quantity
-                stock.save(update_fields=["quantity", "locked_amount"])
+            elif self.status == 'Confirmed':
+                # Confirm only if pending exists
+                pending_item = SalesItem.objects.select_for_update().filter(
+                    id=self.id,
+                    status='Pending'
+                ).first()
+                if pending_item:
+                    pending_item.status = 'Confirmed'
+                    pending_item.save(update_fields=['status'])
+                    return pending_item
+                return {"status": "no pending item found to confirm"}
+
             else:
-                prev = SalesOrderItem.objects.select_for_update().get(pk=self.pk)
-                if prev.status == "DELIVERED":
-                    raise ValidationError("Delivered items cannot be modified.")
-                if self.status == "DELIVERED" and prev.status != "DELIVERED":
-                    self._deliver(stock)
-                elif self.status == "CANCELLED" and prev.status != "CANCELLED":
-                    self._cancel(stock)
+                # Default save for other statuses
+                super().save(*args, **kwargs)
+                return self
 
-            super().save(*args, **kwargs)
-            self.sales_order.recalc_total()
-            self.sales_order.update_status()
+    # def save(self, *args, **kwargs):
+    #     self.total_price = self.price * self.quantity
+    #     inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
+        
+    #     if inventory_record:
+    #         #check for sufficient stock
+    #         if inventory_record.quantity < self.quantity:
+    #             return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
+    #         self.inventory = inventory_record
+    #     else:
+    #         raise {"detail": "No inventory record found for the specified product and warehouse."}
 
-    def _deliver(self, stock):
-        stock.locked_amount -= self.quantity
-        stock.save(update_fields=["locked_amount"])
-        InventoryMovementLog.objects.create(
-            product=self.product,
-            quantity=self.quantity,
-            movement_type='outbound',
-            reason='sales',
-            source_warehouse=self.sales_order.source_store,
-            remarks=f"Delivered via Sales Order {self.sales_order.id}"
-        )
+    #     if not self.id:
+    #         self.id = cid(prefix="SI")
+    #     with transaction.atomic():
 
-    def _cancel(self, stock):
-        stock.quantity += self.quantity
-        stock.locked_amount -= self.quantity
-        stock.save(update_fields=["quantity", "locked_amount"])
+    #         if self.status == 'Pending':
+
+    #             existing_item = SalesItem.objects.select_for_update().filter(
+    #                     sale_order=self.sale_order,
+    #                     product_name=self.product_name,
+    #                     status='Pending'
+    #                 ).first()
+    #             if existing_item:
+    #                 # If an existing item is found, merge the quantities
+    #                 existing_item.quantity += self.quantity
+    #                 existing_item.price += self.price
+    #                 existing_item.total_price = existing_item.quantity * existing_item.price
+    #                 # existing_item.save(update_fields=['quantity', 'price', 'total_price'])
+    #                 return existing_item 
+    #             else:
+    #                 super().save(*args, **kwargs)
+    #                 return self
+    #         # Try merging with an existing pending record for the same product & order
+    #         # update_count=SalesItem.objects.filter(
+    #         #     sale_order=self.sale_order,
+    #         #     product_name=self.product_name,
+    #         #     status='Pending'
+    #         # ).update(
+    #         #     quantity=F('quantity') + self.quantity,
+    #         #     price=F('price') + self.price , # preserve accumulated total
+    #         #     total_price=F('price') * F('quantity'),
+
+    #         # )
+    #         # super().save(*args, **kwargs)
+    #         # # if merge succeeded, skip saving a duplicate
+
+
+    #         # merged_item = SalesItem.objects.filter(
+    #         #                 sale_order=self.sale_order,
+    #         #                 product_name=self.product_name,
+    #         #                 status='Pending'
+    #         # #             )
+    #         # if update_count:
+    #         #     merged_item = SalesItem.objects.filter(
+    #         #         sale_order=self.sale_order,
+    #         #         product_name=self.product_name,
+    #         #         status='Pending'
+    #         #     ).select_related(
+    #         #         'sale_order', 'product_name', 'source_whouse', 'inventory'
+    #         #     ).first()  # use first() to avoid DoesNotExist
+    #         #     return merged_item
+            
+    #         # else:
+    #         #     # no existing pending item, proceed to save new
+    #         #     super().save(*args, **kwargs)
+    #         #     return {"status": "new item saved", "id": self.id}
+
+    #         elif self.status == 'Confirmed':
+    #             # move the item from pending to confirmed
+    #             confirmed = SalesItem.objects.filter(
+    #                 id=self.id,
+    #                 status='Pending'
+    #             ).update(status='Confirmed')
+    #             if confirmed:
+    #                 return {"status": "updated to confirmed", "id": self.id}
+    #             return {"status": "no pending item found to confirm"}
+
+       
+# def save(self, *args, **kwargs):
+#     self.total_price = self.price * self.quantity
+
+#     try:
+#         inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
+#     except ObjectDoesNotExist:
+#         return {"detail": "No inventory record found for the specified product and warehouse."}
+
+#     # check for sufficient stock
+#     if inventory_record.quantity < self.quantity:
+#         return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
+
+#     # assign inventory
+#     self.inventory = inventory_record.id
+
+#     # auto-generate id
+#     if not self.id:
+#         self.id = cid(prefix="SI")
+
+#     # handle pending state merging
+#     if self.status == 'Pending':
+#         update_count = SalesItem.objects.filter(
+#             sale_order=self.sale_order,
+#             product_name=self.product_name,
+#             status='Pending'
+#         ).exclude(id=self.id).update(
+#             quantity=F('quantity') + self.quantity,
+#             price=F('price') + self.price,
+#             total_price=F('price') * F('quantity'),
+#         )
+
+#         # if merged → return info message
+#         if update_count:
+#             return {"status": "merged", "update_count": update_count}
+
+#         # if new pending item → save normally
+#         super().save(*args, **kwargs)
+#         return self  # ✅ return full object
+
+#     elif self.status == 'Confirmed':
+#         confirmed = SalesItem.objects.filter(
+#             id=self.id,
+#             status='Pending'
+#         ).update(status='Confirmed')
+
+#         if confirmed:
+#             return {"status": "updated to confirmed", "id": self.id}
+#         return {"status": "no pending item found to confirm"}
+
+#     # default: just save normally
+#     super().save(*args, **kwargs)
+#     return self
+def __str__(self):
+    return f"Item {self.product_name} (x{self.quantity}) for Order {self.sale_order.id}"
+
+
+
+
+
+
+
+
+
+class SalesTransaction(models.Model):
+    id=models.CharField(max_length=20,primary_key=True,editable=False)
+    sale_item=models.ForeignKey(
+        SalesItem,
+        on_delete=models.CASCADE,
+        null=False,blank=False,editable=False)
+    transaction_date=models.DateTimeField(auto_now_add=True)
+    amount=models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method=models.CharField(max_length=50)
+    bank_reference=models.CharField(max_length=100)
+    payment_status=models.CharField(default='Unpaid')
+
+    def save(self, *args, **kwargs):
+       if not self.id:
+           self.id = cid(prefix="ST")
+       super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product} ({self.quantity})"
-
-
-# Payment is defined in finance.models — you can link it with a ForeignKey
-# sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='payments')
-# It will automatically update SalesOrder.payment_status on save.
-    def save(self, *args, **kwargs):
-        is_new = self._state.adding
-        super().save(*args, **kwargs)
-        if is_new and self.status == 'paid':
-            if self.sales_order:
-                self.sales_order.update_payment_status()
-            elif self.purchase_order:
-                self.purchase_order.update_payment_status()
+        return f"Transaction {self.id} for Item {self.sale_item.id}"

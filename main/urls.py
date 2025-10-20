@@ -84,12 +84,15 @@ from core.views import (
 )
 
 # POSO app viewsets
-from poso.views import (
-    SupplierViewSet, CustomerViewSet,
-    PurchaseOrderViewSet, PurchaseOrderItemViewSet,
-    SalesOrderViewSet, SalesOrderItemViewSet,
-    PaymentViewSet, InvoiceViewSet
-)
+# from poso.views import (
+#     SupplierViewSet, CustomerViewSet,
+#     PurchaseOrderViewSet, PurchaseOrderItemViewSet,
+#     SalesOrderViewSet, SalesOrderItemViewSet,
+#     PaymentViewSet, InvoiceViewSet
+# )
+
+from sales.views import SalesOrderViewSet, SalesItemViewSet
+
 
 admin.site.site_header = "Milki System Administration"
 admin.site.site_title = "Milki Admin Portal"
@@ -109,6 +112,7 @@ core_router = DefaultRouter()
 poso_router = DefaultRouter()
 inventory_router = DefaultRouter()
 users_router = DefaultRouter()
+so_router = DefaultRouter()
 
 # CORE routes
 core_router.register(r'companies', CompanyViewSet)
@@ -117,14 +121,14 @@ core_router.register(r'admin-regions', AdminRegionViewSet)
 core_router.register(r'cities', CityViewSet)
 
 # POSO routes
-poso_router.register(r'suppliers', SupplierViewSet)
-poso_router.register(r'customers', CustomerViewSet)
-poso_router.register(r'purchase-orders', PurchaseOrderViewSet)
-poso_router.register(r'purchase-order-items', PurchaseOrderItemViewSet)
-poso_router.register(r'sales-orders', SalesOrderViewSet)
-poso_router.register(r'sales-order-items', SalesOrderItemViewSet)
-poso_router.register(r'payments', PaymentViewSet)
-poso_router.register(r'invoices', InvoiceViewSet)
+# poso_router.register(r'suppliers', SupplierViewSet)
+# poso_router.register(r'customers', CustomerViewSet)
+# poso_router.register(r'purchase-orders', PurchaseOrderViewSet)
+# poso_router.register(r'purchase-order-items', PurchaseOrderItemViewSet)
+# poso_router.register(r'sales-orders', SalesOrderViewSet)
+# poso_router.register(r'sales-order-items', SalesOrderItemViewSet)
+# poso_router.register(r'payments', PaymentViewSet)
+# poso_router.register(r'invoices', InvoiceViewSet)
 
 # INVENTORY routes
 inventory_router.register(r'warehouses', WarehouseViewSet)
@@ -136,7 +140,9 @@ inventory_router.register(r'stock-transfers', StockTransferViewSet, basename='st
 
 # Users Routes
 users_router.register(r'users', UserViewSet)
-
+# Sales Order router
+so_router.register(r'salesorders', SalesOrderViewSet, basename='salesorder')
+so_router.register(r'salesorderitems', SalesItemViewSet, basename='salesorderitem')
 
 # -----------------------------
 # URL Patterns
@@ -154,7 +160,8 @@ urlpatterns = [
 
     # API Groups (Prefixed by app)
     path('core/', include(core_router.urls)),         # e.g. /core/companies/
-    path('poso/', include(poso_router.urls)),         # e.g. /poso/suppliers/
+    # path('poso/', include(poso_router.urls)),         # e.g. /poso/suppliers/
+    path('so/', include(so_router.urls)),   # e.g. /sales-orders/
     path('inventory/', include(inventory_router.urls)),  # e.g. /inventory/products/
     path('users/', include(users_router.urls)),  # e.g. /users/
 
