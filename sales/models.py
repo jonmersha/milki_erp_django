@@ -78,191 +78,61 @@ class SalesItem(models.Model):
     payment_status=models.CharField(default='Unpaid',max_length=20,choices=PAYMENT_STATUS_CHOICES)
     reg_date=models.DateTimeField(auto_now=True)
 
+
     def save(self, *args, **kwargs):
         self.total_price = self.price * self.quantity
-        inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
 
-        if inventory_record:
-            if inventory_record.quantity < self.quantity:
-                return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
-            self.inventory = inventory_record
-        else:
-            raise {"detail": "No inventory record found for the specified product and warehouse."}
+        try:
+            inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
+        except ObjectDoesNotExist:
+            return {"detail": "No inventory record found for the specified product and warehouse."}
 
+        # check for sufficient stock
+        if inventory_record.quantity < self.quantity:
+            return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
+
+        # assign inventory
+        self.inventory = inventory_record
+
+        # auto-generate id
         if not self.id:
             self.id = cid(prefix="SI")
 
-        with transaction.atomic():
-            if self.status == 'Pending':
-                # Lock the row to prevent race conditions
-                existing_item = SalesItem.objects.select_for_update().filter(
-                    sale_order=self.sale_order,
-                    product_name=self.product_name,
-                    status='Pending'
-                ).first()
+        # handle pending state merging
+        if self.status == 'Pending':
+            update_count = SalesItem.objects.filter(
+                sale_order=self.sale_order,
+                product_name=self.product_name,
+                status='Pending'
+            ).exclude(id=self.id).update(
+                quantity=F('quantity') + self.quantity,
+                price=self.price,
+                total_price=F('price') * F('quantity'),
+            )
 
-                if existing_item:
-                    # Merge safely inside transaction
-                    existing_item.quantity += self.quantity
-                    existing_item.price += self.price
-                    existing_item.total_price = existing_item.quantity * existing_item.price
-                    existing_item.save(update_fields=['quantity', 'price', 'total_price'])
-                    return existing_item  # return merged object
-                else:
-                    # No existing pending item, save new
-                    super().save(*args, **kwargs)
-                    return self
+            # if merged → return info message
+            if update_count:
+                return {"status": "merged", "update_count": update_count}
 
-            elif self.status == 'Confirmed':
-                # Confirm only if pending exists
-                pending_item = SalesItem.objects.select_for_update().filter(
-                    id=self.id,
-                    status='Pending'
-                ).first()
-                if pending_item:
-                    pending_item.status = 'Confirmed'
-                    pending_item.save(update_fields=['status'])
-                    return pending_item
-                return {"status": "no pending item found to confirm"}
+            # if new pending item → save normally
+            super().save(*args, **kwargs)
+            return self  # ✅ return full object
 
-            else:
-                # Default save for other statuses
-                super().save(*args, **kwargs)
-                return self
+        elif self.status == 'Confirmed':
+            confirmed = SalesItem.objects.filter(
+                id=self.id,
+                status='Pending'
+            ).update(status='Confirmed')
 
-    # def save(self, *args, **kwargs):
-    #     self.total_price = self.price * self.quantity
-    #     inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
-        
-    #     if inventory_record:
-    #         #check for sufficient stock
-    #         if inventory_record.quantity < self.quantity:
-    #             return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
-    #         self.inventory = inventory_record
-    #     else:
-    #         raise {"detail": "No inventory record found for the specified product and warehouse."}
+            if confirmed:
+                return {"status": "updated to confirmed", "id": self.id}
+            return {"status": "no pending item found to confirm"}
 
-    #     if not self.id:
-    #         self.id = cid(prefix="SI")
-    #     with transaction.atomic():
-
-    #         if self.status == 'Pending':
-
-    #             existing_item = SalesItem.objects.select_for_update().filter(
-    #                     sale_order=self.sale_order,
-    #                     product_name=self.product_name,
-    #                     status='Pending'
-    #                 ).first()
-    #             if existing_item:
-    #                 # If an existing item is found, merge the quantities
-    #                 existing_item.quantity += self.quantity
-    #                 existing_item.price += self.price
-    #                 existing_item.total_price = existing_item.quantity * existing_item.price
-    #                 # existing_item.save(update_fields=['quantity', 'price', 'total_price'])
-    #                 return existing_item 
-    #             else:
-    #                 super().save(*args, **kwargs)
-    #                 return self
-    #         # Try merging with an existing pending record for the same product & order
-    #         # update_count=SalesItem.objects.filter(
-    #         #     sale_order=self.sale_order,
-    #         #     product_name=self.product_name,
-    #         #     status='Pending'
-    #         # ).update(
-    #         #     quantity=F('quantity') + self.quantity,
-    #         #     price=F('price') + self.price , # preserve accumulated total
-    #         #     total_price=F('price') * F('quantity'),
-
-    #         # )
-    #         # super().save(*args, **kwargs)
-    #         # # if merge succeeded, skip saving a duplicate
-
-
-    #         # merged_item = SalesItem.objects.filter(
-    #         #                 sale_order=self.sale_order,
-    #         #                 product_name=self.product_name,
-    #         #                 status='Pending'
-    #         # #             )
-    #         # if update_count:
-    #         #     merged_item = SalesItem.objects.filter(
-    #         #         sale_order=self.sale_order,
-    #         #         product_name=self.product_name,
-    #         #         status='Pending'
-    #         #     ).select_related(
-    #         #         'sale_order', 'product_name', 'source_whouse', 'inventory'
-    #         #     ).first()  # use first() to avoid DoesNotExist
-    #         #     return merged_item
-            
-    #         # else:
-    #         #     # no existing pending item, proceed to save new
-    #         #     super().save(*args, **kwargs)
-    #         #     return {"status": "new item saved", "id": self.id}
-
-    #         elif self.status == 'Confirmed':
-    #             # move the item from pending to confirmed
-    #             confirmed = SalesItem.objects.filter(
-    #                 id=self.id,
-    #                 status='Pending'
-    #             ).update(status='Confirmed')
-    #             if confirmed:
-    #                 return {"status": "updated to confirmed", "id": self.id}
-    #             return {"status": "no pending item found to confirm"}
-
-       
-# def save(self, *args, **kwargs):
-#     self.total_price = self.price * self.quantity
-
-#     try:
-#         inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
-#     except ObjectDoesNotExist:
-#         return {"detail": "No inventory record found for the specified product and warehouse."}
-
-#     # check for sufficient stock
-#     if inventory_record.quantity < self.quantity:
-#         return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
-
-#     # assign inventory
-#     self.inventory = inventory_record.id
-
-#     # auto-generate id
-#     if not self.id:
-#         self.id = cid(prefix="SI")
-
-#     # handle pending state merging
-#     if self.status == 'Pending':
-#         update_count = SalesItem.objects.filter(
-#             sale_order=self.sale_order,
-#             product_name=self.product_name,
-#             status='Pending'
-#         ).exclude(id=self.id).update(
-#             quantity=F('quantity') + self.quantity,
-#             price=F('price') + self.price,
-#             total_price=F('price') * F('quantity'),
-#         )
-
-#         # if merged → return info message
-#         if update_count:
-#             return {"status": "merged", "update_count": update_count}
-
-#         # if new pending item → save normally
-#         super().save(*args, **kwargs)
-#         return self  # ✅ return full object
-
-#     elif self.status == 'Confirmed':
-#         confirmed = SalesItem.objects.filter(
-#             id=self.id,
-#             status='Pending'
-#         ).update(status='Confirmed')
-
-#         if confirmed:
-#             return {"status": "updated to confirmed", "id": self.id}
-#         return {"status": "no pending item found to confirm"}
-
-#     # default: just save normally
-#     super().save(*args, **kwargs)
-#     return self
-def __str__(self):
-    return f"Item {self.product_name} (x{self.quantity}) for Order {self.sale_order.id}"
+        # default: just save normally
+        super().save(*args, **kwargs)
+        return self
+    def __str__(self):
+        return f"Item {self.product_name} (x{self.quantity}) for Order {self.sale_order.id}"
 
 
 
