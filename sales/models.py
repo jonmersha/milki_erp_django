@@ -52,7 +52,6 @@ class SalesItem(models.Model):
         ('Paid', 'Paid'),
         ('Refunded', 'Refunded'),
     ]
-
     id=models.CharField(max_length=20,primary_key=True,editable=False)
     sale_order=models.ForeignKey(
         SalesOrder,
@@ -86,19 +85,11 @@ class SalesItem(models.Model):
             inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
         except ObjectDoesNotExist:
             return {"detail": "No inventory record found for the specified product and warehouse."}
-
-        # check for sufficient stock
         if inventory_record.quantity < self.quantity:
             return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
-
-        # assign inventory
         self.inventory = inventory_record
-
-        # auto-generate id
         if not self.id:
             self.id = cid(prefix="SI")
-
-        # handle pending state merging
         if self.status == 'Pending':
             update_count = SalesItem.objects.filter(
                 sale_order=self.sale_order,
@@ -109,15 +100,10 @@ class SalesItem(models.Model):
                 price=self.price,
                 total_price=F('price') * F('quantity'),
             )
-
-            # if merged → return info message
             if update_count:
                 return {"status": "merged", "update_count": update_count}
-
-            # if new pending item → save normally
             super().save(*args, **kwargs)
-            return self  # ✅ return full object
-
+            return self 
         elif self.status == 'Confirmed':
             confirmed = SalesItem.objects.filter(
                 id=self.id,
@@ -127,21 +113,12 @@ class SalesItem(models.Model):
             if confirmed:
                 return {"status": "updated to confirmed", "id": self.id}
             return {"status": "no pending item found to confirm"}
-
-        # default: just save normally
         super().save(*args, **kwargs)
         return self
     def __str__(self):
         return f"Item {self.product_name} (x{self.quantity}) for Order {self.sale_order.id}"
 
-
-
-
-
-
-
-
-
+# --------------------------------------------------------------------------
 class SalesTransaction(models.Model):
     id=models.CharField(max_length=20,primary_key=True,editable=False)
     sale_item=models.ForeignKey(
