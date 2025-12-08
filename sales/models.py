@@ -1,12 +1,37 @@
+from datetime import timezone
 from django.db import models
 from core.base import BaseModel
 from inventory.models import Stock, Warehouse
-from poso.models import Customer
-from core.utility.uuidgen import cid
+from core.utility.uuidgen import cid, generate_custom_id
 from django.db.models import F
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
+class Customer(BaseModel):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+    id = models.CharField(
+        max_length=16,
+        primary_key=True,
+        editable=False,
+        unique=True
+    )
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.CharField(max_length=100, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, null=True)
+    def save(self, *args, **kwargs):
+        if not self.id:
+            partition = timezone.now().strftime("%Y%m%d")
+            self.id = generate_custom_id(prefix="CUS", partition=partition, length=16)
+        super().save(*args, **kwargs)
+
+
+    def __str__(self):
+        return self.name
 
 class SalesOrder(models.Model):
     ORDER_OPTIONS = [
@@ -118,7 +143,7 @@ class SalesItem(models.Model):
     def __str__(self):
         return f"Item {self.product_name} (x{self.quantity}) for Order {self.sale_order.id}"
 
-# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 class SalesTransaction(models.Model):
     id=models.CharField(max_length=20,primary_key=True,editable=False)
     sale_item=models.ForeignKey(
