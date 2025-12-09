@@ -1,6 +1,4 @@
-Alright Yohannes — here’s a clean, professional **README.md** you can drop straight into your repo.
-I kept it clear, structured, and developer-friendly, based on your BRD + SQL schema.
-If you want it on a canvas for editing, just say the word.
+
 
 ---
 
