@@ -190,4 +190,3 @@ The project includes the following core tables:
 
 ---
 
-If you want this README exported as **PDF**, **DOCX**, or placed into a **GitHub-styled README canvas**, just tap me — I’ll sort it out.
