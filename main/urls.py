@@ -186,6 +186,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
@@ -203,7 +204,7 @@ from core.views import (
 )
 
 # SALES (replacing POSO)
-from main.views import FrontendAppView, ServiceWorkerView, home_view
+from main.views import FrontendAppView
 from sales.views import SalesOrderViewSet, SalesItemViewSet
 
 # INVENTORY
@@ -291,10 +292,11 @@ urlpatterns = [
     # path('api/docs/', include_docs_urls(title="Milki System API Docs")),
     # Catch-all pattern to serve React app
     re_path(r'^.*$', FrontendAppView.as_view(), name='home'),
-    re_path(r'^sw$', ServiceWorkerView.as_view(), name='service-worker'),
+    # re_path(r'^sw$', ServiceWorkerView.as_view(), name='service-worker'),
 
 ]
-
+urlpatterns += staticfiles_urlpatterns()  
+# urlpatterns += staticfiles_urlpatterns()
 # Media handling (development only)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
