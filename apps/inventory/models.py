@@ -1,9 +1,9 @@
 from django.db import models,transaction
 from django.forms import ValidationError
 from django.utils import timezone
-from core.base import BaseModel
-from core.models import Company, Factory
-from core.utility.uuidgen import generate_custom_id
+from apps.core.base import BaseModel
+from apps.core.models import Company, Factory
+from apps.core.utility.uuidgen import generate_custom_id
 from django.utils import timezone
 from django.conf import settings
 

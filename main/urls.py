@@ -297,7 +297,6 @@ urlpatterns = [
         name='openapi-schema'
     ),
 
-<<<<<<< HEAD
 #     # API Docs (enable when needed)
 #     # path('api/docs/', include_docs_urls(title="Milki System API Docs")),
 #     # Catch-all pattern to serve React app
@@ -310,13 +309,6 @@ urlpatterns = [
 #     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 #     # 3. Redoc UI (Optional):
 #     # path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-=======
-    # API Docs (enable when needed)
-    # path('api/docs/', include_docs_urls(title="Milki System API Docs")),
-    # Catch-all pattern to serve React app
-    re_path(r'^.*$', FrontendAppView.as_view(), name='home'),
-    # re_path(r'^sw$', ServiceWorkerView.as_view(), name='service-worker'),
->>>>>>> ccc01501f44a7a31a6e6059754d57a80d417a00e
 
 ]
 urlpatterns += staticfiles_urlpatterns()  

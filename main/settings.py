@@ -147,15 +147,9 @@ USE_TZ = True
 
 # STATIC_URL = '/static/'
 
-<<<<<<< HEAD
 STATICFILES_DIRS = [
     BASE_DIR / "frontend" / "dist" / "static",
 ]
-=======
-# STATICFILES_DIRS = [
-#     BASE_DIR / "frontend" / "build" / "static",
-# ]
->>>>>>> ccc01501f44a7a31a6e6059754d57a80d417a00e
 
 
 # STATIC_ROOT = BASE_DIR / 'staticfiles'   # collected static files
