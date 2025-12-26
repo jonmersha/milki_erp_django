@@ -13,7 +13,7 @@ class FrontendAppView(gnview):
     """
     def get(self, request, *args, **kwargs):
         try:
-            with open(Path(__file__).resolve().parent.parent / 'frontend' / 'build' / 'index.html') as f:
+            with open(Path(__file__).resolve().parent.parent / 'frontend' / 'dist' / 'index.html') as f:
                 return HttpResponse(f.read())
         except FileNotFoundError:
             return HttpResponse(
@@ -24,7 +24,7 @@ class FrontendAppView(gnview):
 from django.views import View
 class ServiceWorkerView(View):
     def get(self, request, *args, **kwargs):
-        path = Path(__file__).resolve().parent.parent / 'frontend' / 'build' / 'service-worker.js'
+        path = Path(__file__).resolve().parent.parent / 'frontend' / 'dist' / 'service-worker.js'
         if path.exists():
             return HttpResponse(path.read_text(), content_type='application/javascript')
         return HttpResponse("Service worker not found", status=404)

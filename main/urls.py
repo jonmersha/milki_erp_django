@@ -215,6 +215,7 @@ from inventory.views import (
 # USERS
 from users.views import UserViewSet
 
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 # -----------------------------
 # Routers (modular per app)
@@ -258,6 +259,14 @@ admin.site.index_title = "Welcome to Milki Management Dashboard"
 # URL Patterns
 # -----------------------------
 urlpatterns = [
+    # ... other paths (admin, etc.)
+
+    # 1. This view generates the actual schema (YAML/JSON)
+    # USE SpectacularAPIView, NOT get_schema_view
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+
+    # 2. This view is the UI that reads the schema above
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     
     #  path('', home_view, name='home'),
     # Admin panel
@@ -287,11 +296,18 @@ urlpatterns = [
         name='openapi-schema'
     ),
 
-    # API Docs (enable when needed)
-    # path('api/docs/', include_docs_urls(title="Milki System API Docs")),
-    # Catch-all pattern to serve React app
-    re_path(r'^.*$', FrontendAppView.as_view(), name='home'),
-    re_path(r'^sw$', ServiceWorkerView.as_view(), name='service-worker'),
+#     # API Docs (enable when needed)
+#     # path('api/docs/', include_docs_urls(title="Milki System API Docs")),
+#     # Catch-all pattern to serve React app
+#     # re_path(r'^.*$', FrontendAppView.as_view(), name='home'),
+#     # re_path(r'^sw$', ServiceWorkerView.as_view(), name='service-worker'),
+# # 1. Download the schema (YAML/JSON)
+#    # The view that generates the schema
+#     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+#     # The UI view
+#     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+#     # 3. Redoc UI (Optional):
+#     # path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
 ]
 
