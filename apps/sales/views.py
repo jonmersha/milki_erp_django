@@ -4,10 +4,10 @@ from rest_framework import status
 from rest_framework import viewsets
 
 
-from inventory.models import Stock
-from sales.models import SalesOrder,SalesItem
-from sales.Serializer import SalesItemSerializer,SalesOrderSerializer
-from sales.Serializer import SalesOrderSerializer
+from apps.inventory.models import Stock
+from .models import SalesOrder,SalesItem
+from .Serializer import SalesItemSerializer,SalesOrderSerializer
+from .Serializer import SalesOrderSerializer
 
 
 class SalesOrderViewSet(viewsets.ModelViewSet):

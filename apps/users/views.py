@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
 
-from users.serializer import UserSerializer
+from .serializer import UserSerializer
 from .models import User
 
 

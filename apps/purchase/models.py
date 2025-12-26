@@ -2,9 +2,9 @@ from datetime import timezone
 from decimal import Decimal
 from django.db import models,transaction
 
-from core.base import BaseModel
-from core.utility.uuidgen import generate_custom_id
-from inventory.models import InventoryMovementLog, Product, Stock, Warehouse
+from apps.core.base import BaseModel
+from apps.core.utility.uuidgen import generate_custom_id
+from apps.inventory.models import InventoryMovementLog, Product, Stock, Warehouse
 
 # Create your models here.
 class Supplier(BaseModel):

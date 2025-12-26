@@ -1,5 +1,5 @@
 
-from inventory.serializers import ProductSerializer
+from apps.inventory.serializers import ProductSerializer
 from .models import Customer, SalesItem, SalesOrder
 from rest_framework import serializers
 

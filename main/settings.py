@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_filters',
     'rest_framework',
+    'drf_spectacular',
     'djoser',
     'debug_toolbar',
     # local imports
@@ -146,9 +147,9 @@ USE_TZ = True
 
 # STATIC_URL = '/static/'
 
-# STATICFILES_DIRS = [
-#     BASE_DIR / "frontend" / "build" / "static",
-# ]
+STATICFILES_DIRS = [
+    BASE_DIR / "frontend" / "dist" / "static",
+]
 
 
 # STATIC_ROOT = BASE_DIR / 'staticfiles'   # collected static files
@@ -174,9 +175,17 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 # Custom user model
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Milki ERP API',
+    'DESCRIPTION': 'API documentation for the Milki ERP project',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Other customizations can go here
+}
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME':  timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),

@@ -1,8 +1,8 @@
 from datetime import timezone
 from django.db import models
-from core.base import BaseModel
-from inventory.models import Stock, Warehouse
-from core.utility.uuidgen import cid, generate_custom_id
+from apps.core.base import BaseModel
+from apps.inventory.models import Stock, Warehouse
+from apps.core.utility.uuidgen import cid, generate_custom_id
 from django.db.models import F
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction

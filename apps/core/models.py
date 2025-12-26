@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from core.base import BaseModel
-from core.utility.uuidgen import generate_custom_id
+from apps.core.base import BaseModel
+from apps.core.utility.uuidgen import generate_custom_id
 
 
 # -----------------------------

@@ -1,0 +1,2 @@
+installed
+pip install drf-spectacular drf-spectacular-sidecar
