@@ -199,22 +199,22 @@ from main.cd import CreateAdminUserView
 # -----------------------------
 
 # CORE
-from core.views import (
+from apps.core.views import (
     CityViewSet, CompanyViewSet, FactoryViewSet, AdminRegionViewSet
 )
 
 # SALES (replacing POSO)
 from main.views import FrontendAppView
-from sales.views import SalesOrderViewSet, SalesItemViewSet
+from apps.sales.views import SalesOrderViewSet, SalesItemViewSet
 
 # INVENTORY
-from inventory.views import (
+from apps.inventory.views import (
     WarehouseViewSet, ProductPackageViewSet, ProductViewSet,
     StockViewSet, InventoryMovementViewSet, StockTransferViewSet
 )
 
 # USERS
-from users.views import UserViewSet
+from apps.users.views import UserViewSet
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
