@@ -48,15 +48,16 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'djoser',
     'debug_toolbar',
-    'sales',
-    'purchase',
-    'core',
-    'users',
-    'inventory',
-    'finance',
-    'crm',
-    'hr',
-    'reporting'
+    # local imports
+    'apps.sales',
+    'apps.purchase',
+    'apps.core',
+    'apps.users',
+    'apps.inventory',
+    'apps.finance',
+    'apps.crm',
+    'apps.hr',
+    'apps.reporting'
 ]
 
 MIDDLEWARE = [
@@ -73,10 +74,15 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'main.urls'
 
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "frontend" / "dist",
+]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / "frontend" / "dist"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -139,14 +145,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 
-STATIC_URL = '/static/'
+# STATIC_URL = '/static/'
 
+<<<<<<< HEAD
 STATICFILES_DIRS = [
     BASE_DIR / "frontend" / "dist" / "static",
 ]
+=======
+# STATICFILES_DIRS = [
+#     BASE_DIR / "frontend" / "build" / "static",
+# ]
+>>>>>>> ccc01501f44a7a31a6e6059754d57a80d417a00e
 
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'   # collected static files
+# STATIC_ROOT = BASE_DIR / 'staticfiles'   # collected static files
 # STATICFILES_DIRS = [
 #     BASE_DIR / 'static',   # your custom static folder
 # ]
@@ -154,6 +166,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'   # collected static files
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+
+
+
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

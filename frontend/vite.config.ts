@@ -4,15 +4,15 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  base: "/static/", // REQUIRED for Django
   plugins: [
     react(),
-    tailwindcss(),
+    tailwindcss(), // Tailwind v4 plugin
     VitePWA({
       registerType: "autoUpdate",
-
       manifest: {
-        name: "My React App",
-        short_name: "MyApp",
+        name: "Milki Systems",
+        short_name: "Milki",
         start_url: "/",
         display: "standalone",
         background_color: "#ffffff",
@@ -31,5 +31,12 @@ export default defineConfig({
         ]
       }
     })
-  ]
+  ],
+
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    assetsDir: "assets",
+    manifest: true,
+  },
 });
