@@ -49,8 +49,8 @@ INSTALLED_APPS = [
     'djoser',
     'debug_toolbar',
     # local imports
-    'apps.sales',
     'apps.purchase',
+    'apps.sales',
     'apps.core',
     'apps.users',
     'apps.inventory',
@@ -102,8 +102,8 @@ WSGI_APPLICATION = 'main.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'milki8',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'cafe6',
         'HOST': 'localhost',
         'USER': 'storeuser',
         'PASSWORD': 'Yohannes@123321'
@@ -197,8 +197,8 @@ AUTH_USER_MODEL = 'users.User'
 
 DJOSER = {
     'SERIALIZERS': {
-        'user_create': 'users.serializer.UserCreateSerializer',
-        'current_user': 'users.serializer.UserSerializer',
+        'user_create': 'apps.users.serializer.UserCreateSerializer',
+        'current_user': 'apps.users.serializer.UserSerializer',
     }
 }                   
 JAZZMIN_SETTINGS = {

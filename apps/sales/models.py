@@ -1,5 +1,6 @@
-from datetime import timezone
+from django.utils import timezone
 from django.db import models
+from django.forms import ValidationError
 from apps.core.base import BaseModel
 from apps.inventory.models import Stock, Warehouse
 from apps.core.utility.uuidgen import cid, generate_custom_id
@@ -28,10 +29,8 @@ class Customer(BaseModel):
             partition = timezone.now().strftime("%Y%m%d")
             self.id = generate_custom_id(prefix="CUS", partition=partition, length=16)
         super().save(*args, **kwargs)
-
-
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.id})"
 
 class SalesOrder(models.Model):
     ORDER_OPTIONS = [
@@ -60,9 +59,6 @@ class SalesOrder(models.Model):
     def __str__(self):
         return f"Order {self.id} for {self.customer}"
     
-
-
-
 # --------------------------------------------------------------------------
 # Sales Item Model
 class SalesItem(models.Model):
@@ -81,6 +77,7 @@ class SalesItem(models.Model):
     sale_order=models.ForeignKey(
         SalesOrder,
         on_delete=models.CASCADE,
+        related_name='items',
         null=False,blank=False,editable=True)
     product_name=models.ForeignKey(
         'inventory.Product',
@@ -95,6 +92,7 @@ class SalesItem(models.Model):
         on_delete=models.PROTECT,
         null=False,blank=False,editable=True)
     
+    
     quantity=models.PositiveIntegerField()
     price=models.DecimalField(max_digits=10, decimal_places=2)
     total_price=models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
@@ -106,43 +104,35 @@ class SalesItem(models.Model):
     def save(self, *args, **kwargs):
         self.total_price = self.price * self.quantity
 
+        # 1. Validate Stock
         try:
             inventory_record = Stock.objects.get(product=self.product_name, warehouse=self.source_whouse)
         except ObjectDoesNotExist:
-            return {"detail": "No inventory record found for the specified product and warehouse."}
+            raise ValidationError("No inventory record found.")
+
         if inventory_record.quantity < self.quantity:
-            return {"status": "insufficient_stock", "available_quantity": inventory_record.quantity}
+            raise ValidationError(f"Insufficient stock. Available: {inventory_record.quantity}")
+
         self.inventory = inventory_record
+
         if not self.id:
             self.id = cid(prefix="SI")
+
+        # 2. Handle Merging for Pending items
         if self.status == 'Pending':
-            update_count = SalesItem.objects.filter(
+            existing_item = SalesItem.objects.filter(
                 sale_order=self.sale_order,
                 product_name=self.product_name,
                 status='Pending'
-            ).exclude(id=self.id).update(
-                quantity=F('quantity') + self.quantity,
-                price=self.price,
-                total_price=F('price') * F('quantity'),
-            )
-            if update_count:
-                return {"status": "merged", "update_count": update_count}
-            super().save(*args, **kwargs)
-            return self 
-        elif self.status == 'Confirmed':
-            confirmed = SalesItem.objects.filter(
-                id=self.id,
-                status='Pending'
-            ).update(status='Confirmed')
+            ).exclude(id=self.id).first()
 
-            if confirmed:
-                return {"status": "updated to confirmed", "id": self.id}
-            return {"status": "no pending item found to confirm"}
+            if existing_item:
+                existing_item.quantity += self.quantity
+                existing_item.price = self.price # Update to latest price
+                existing_item.save()
+                return # Stop saving the current instance as it's now merged
+
         super().save(*args, **kwargs)
-        return self
-    def __str__(self):
-        return f"Item {self.product_name} (x{self.quantity}) for Order {self.sale_order.id}"
-
 # --------------------------------------------------------------------------------
 class SalesTransaction(models.Model):
     id=models.CharField(max_length=20,primary_key=True,editable=False)
@@ -154,7 +144,7 @@ class SalesTransaction(models.Model):
     amount=models.DecimalField(max_digits=10, decimal_places=2)
     payment_method=models.CharField(max_length=50)
     bank_reference=models.CharField(max_length=100)
-    payment_status=models.CharField(default='Unpaid')
+    payment_status=models.CharField(max_length=20, default='Unpaid')
 
     def save(self, *args, **kwargs):
        if not self.id:

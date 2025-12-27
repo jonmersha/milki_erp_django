@@ -1,105 +1,80 @@
-from django.shortcuts import render
-from rest_framework.response import Response  # ✅ correct
-from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from .models import SalesItem, SalesOrder, Customer, SalesTransaction
+from .Serializer import CustomerSerializer, SalesItemSerializer, SalesOrderSerializer, AddSalesItemSerializer, SalesTransactionSerializer
 
-
-from apps.inventory.models import Stock
-from .models import SalesOrder,SalesItem
-from .Serializer import SalesItemSerializer,SalesOrderSerializer
-from .Serializer import SalesOrderSerializer
-
+class CustomerViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Customers to be viewed or edited.
+    """
+    queryset = Customer.objects.all().order_by('-created_at')
+    serializer_class = CustomerSerializer
+    
+    # Adding search and filter capabilities
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status']
+    search_fields = ['name', 'email', 'phone', 'id']
+    ordering_fields = ['created_at', 'name']
 
 class SalesOrderViewSet(viewsets.ModelViewSet):
-    queryset = SalesOrder.objects.all()
+    queryset = SalesOrder.objects.all().prefetch_related('items__product_name', 'customer')
     serializer_class = SalesOrderSerializer
-    def get_queryset(self):
-        # Single query join with Customer table
-        return (
-            SalesOrder.objects
-            .select_related('customer')
-            .order_by('order_date')  # recent orders first
-        )
 
-# class SalesItemViewSet(viewsets.ModelViewSet):
-#     queryset = SalesItem.objects.all()
-#     serializer_class = SalesItemSerializer
-# class SalesItemViewSet(viewsets.ModelViewSet):
-#     queryset = SalesItem.objects.all().select_related(
-#         'sale_order', 'product_name', 'source_whouse', 'inventory'
-#     )
-#     serializer_class = SalesItemSerializer
+    @action(detail=False, methods=['post'], url_path='add-item')
+    def add_item(self, request):
+        serializer = AddSalesItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        v_data = serializer.validated_data
 
-#     def create(self, request, *args, **kwargs):
-#         product_name = request.data.get("product_name")
-#         source_whouse = request.data.get("source_whouse")
-#         quantity = int(request.data.get("quantity", 0))
+        try:
+            # 1. Create order if it doesn't exist
+            order_id = v_data.get('sale_order').id if v_data.get('sale_order') else None
+            
+            if not order_id:
+                if not v_data.get('customer'):
+                    return Response({"error": "Customer required for new orders"}, status=400)
+                new_order = SalesOrder.objects.create(customer=v_data['customer'])
+                order_id = new_order.id
 
-#         # Get inventory record once
-#         inventory_record = Stock.objects.filter(product=product_name, warehouse=source_whouse).first()
-#         if not inventory_record:
-#             return Response(
-#                 {"detail": "No inventory record found for the specified product and warehouse."},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
+            # 2. Add item via Manager
+            SalesOrder.objects.add_item(
+                sale_order_id=order_id,
+                product=v_data['product'],
+                warehouse=v_data['warehouse'],
+                quantity=v_data['quantity'],
+                price=v_data['price']
+            )
 
-#         if inventory_record.quantity < quantity:
-#             return Response(
-#                 {"detail": "Insufficient stock.", "available_quantity": inventory_record.quantity},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
+            # 3. Return full order details
+            result = SalesOrder.objects.get(id=order_id)
+            return Response(SalesOrderSerializer(result).data, status=status.HTTP_201_CREATED)
 
-#         # prepare and validate serializer data
-#         data = request.data.copy()
-#         serializer = self.get_serializer(data=data)
-#         serializer.is_valid(raise_exception=True)
-
-#         # Save new SalesItem, let model handle merging logic
-#         sales_item = SalesItem(**serializer.validated_data)
-#         result = sales_item.save()  # model handles merging logic and response message
-
-#         # If the model returned a dict instead of saving (merged/updated)
-#         if isinstance(result, dict):
-#             return Response(result, status=status.HTTP_200_OK)
-
-#         # assign inventory and save
-#         sales_item.inventory = inventory_record
-#         sales_item.save()
-
-#         # return full info as JSON array
-#         full_data = self.get_serializer(sales_item).data
-#         return Response([full_data], status=status.HTTP_200_OK)
-
-#     def list(self, request, *args, **kwargs):
-#         """Show all items with related objects"""
-#         queryset = self.get_queryset()
-#         serializer = self.get_serializer(queryset, many=True)
-#         return Response(serializer.data)
-
-#     def retrieve(self, request, *args, **kwargs):
-#         """Show full details for a specific item"""
-#         instance = self.get_object()
-#         serializer = self.get_serializer(instance)
-#         return Response(serializer.data)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 class SalesItemViewSet(viewsets.ModelViewSet):
-    queryset = SalesItem.objects.all().select_related(
-        'sale_order', 'product_name', 'source_whouse', 'inventory'
-    )
+    queryset = SalesItem.objects.all().select_related('product_name', 'source_whouse')
     serializer_class = SalesItemSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+class SalesTransactionViewSet(viewsets.ModelViewSet):
+    queryset = SalesTransaction.objects.all().select_related(
+        'sale_item__product_name', 
+        'sale_item__sale_order'
+    )
+    serializer_class = SalesTransactionSerializer
+    filterset_fields = ['payment_status', 'payment_method', 'sale_item']
+    search_fields = ['bank_reference', 'id', 'sale_item__id']
 
-        # Let the model handle logic and return its message or instance
-        sales_item = SalesItem(**serializer.validated_data)
-        result = sales_item.save()
-
-        # If the model returned a dict (like merged or insufficient stock)
-        if isinstance(result, dict):
-            return Response(result, status=status.HTTP_200_OK)
-
-        # If save() returned normally, reload from DB for full info
-        full_instance = SalesItem.objects.get(pk=sales_item.pk)
-        full_serializer = self.get_serializer(full_instance)
-        return Response([full_serializer.data], status=status.HTTP_200_OK)
+    def perform_create(self, serializer):
+        # Save the transaction
+        transaction = serializer.save()
+        
+        # Logic: If amount is paid, update the SalesItem status
+        # This is a basic version; you can expand this for partial payments.
+        item = transaction.sale_item
+        if transaction.payment_status == 'Paid':
+            item.payment_status = 'Paid'
+            item.save(update_fields=['payment_status'])
