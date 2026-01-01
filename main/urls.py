@@ -24,7 +24,7 @@ from apps.purchase.views import PurchaseOrderViewSet, PurchaseOrderItemViewSet, 
     
 # INVENTORY
 from apps.inventory.views import (
-    WarehouseViewSet, ProductPackageViewSet, ProductViewSet,
+    WarehouseViewSet,  ProductViewSet,
     StockViewSet, InventoryMovementViewSet, StockTransferViewSet
 )
 
@@ -72,7 +72,7 @@ purchase_router.register(r'suppliers', SupplierViewSet, basename='suppliers')
 
 # INVENTORY routes
 inventory_router.register(r'warehouses', WarehouseViewSet)
-inventory_router.register(r'product-packages', ProductPackageViewSet)
+# inventory_router.register(r'product-packages', ProductPackageViewSet)
 inventory_router.register(r'products', ProductViewSet)
 inventory_router.register(r'stocks', StockViewSet)
 inventory_router.register(r'inventory-movements', InventoryMovementViewSet)

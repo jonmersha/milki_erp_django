@@ -1,42 +1,38 @@
-# core/views.py
-
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import AdminRegion, City, Company, Factory
-from .serializer import AdminRegionSerializer, CitySerializer, CompanySerializer, FactorySerializer
+from .serializers import (
+    AdminRegionSerializer, CitySerializer, 
+    CompanySerializer, FactorySerializer
+)
 
-
-# -----------------------------
-# AdminRegion ViewSet
-# -----------------------------
 class AdminRegionViewSet(viewsets.ModelViewSet):
-    queryset = AdminRegion.objects.all().order_by('name')
+    queryset = AdminRegion.objects.all()
     serializer_class = AdminRegionSerializer
-    permission_classes = [IsAuthenticated]  # Optional: restrict access
+    lookup_field = 'tracker'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
-
-# -----------------------------
-# City ViewSet
-# -----------------------------
 class CityViewSet(viewsets.ModelViewSet):
-    queryset = City.objects.select_related('admin_region').all().order_by('name')
+    queryset = City.objects.all().select_related('admin_region')
     serializer_class = CitySerializer
-    permission_classes = [IsAuthenticated]
+    lookup_field = 'tracker'
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['admin_region', 'status']
+    search_fields = ['name']
 
-
-# -----------------------------
-# Company ViewSet
-# -----------------------------
 class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all().order_by('name')
+    queryset = Company.objects.all().select_related('city')
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated]
+    lookup_field = 'tracker'
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['city', 'status']
+    search_fields = ['name']
 
-
-# -----------------------------
-# Factory ViewSet
-# -----------------------------
 class FactoryViewSet(viewsets.ModelViewSet):
-    queryset = Factory.objects.select_related('company', 'city', 'admin_region').all().order_by('name')
+    queryset = Factory.objects.all().select_related('company', 'city')
     serializer_class = FactorySerializer
-    permission_classes = [IsAuthenticated]
+    lookup_field = 'tracker'
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['company', 'city', 'status']
+    search_fields = ['name']

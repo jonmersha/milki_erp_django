@@ -1,43 +1,49 @@
-from django.db import models, transaction
-from django.apps import apps
-from django.db.models import F
+# from django.db import models, transaction
+# from django.core.exceptions import ValidationError
 
-class SalesOrderManager(models.Manager):
-    def add_item(self, sale_order_id, product, warehouse, quantity, price):
-        # Lazy load models to avoid circular imports
-        SalesItem = apps.get_model('sales', 'SalesItem')
-        Stock = apps.get_model('inventory', 'Stock')
-
-        with transaction.atomic():
-            # 1. Lock and check stock
-            try:
-                inventory = Stock.objects.select_for_update().get(
-                    product=product, warehouse=warehouse
-                )
-            except Stock.DoesNotExist:
-                raise ValueError("No inventory record found for this product/warehouse.")
-
-            if inventory.quantity < quantity:
-                raise ValueError(f"Insufficient stock. Available: {inventory.quantity}")
-
-            # 2. Handle Merging for 'Pending' items
-            # If same product/warehouse/order exists in Pending, update it
-            item, created = SalesItem.objects.get_or_create(
-                sale_order_id=sale_order_id,
-                product_name=product,
-                source_whouse=warehouse,
-                status='Pending',
-                defaults={
-                    'quantity': quantity,
-                    'price': price,
-                    'inventory': inventory
-                }
-            )
-
-            if not created:
-                item.quantity = F('quantity') + quantity
-                item.price = price  # Update to latest price
-                item.save()
-                item.refresh_from_db()
+# class SalesItemManager(models.Manager):
+#     def add_item_to_order(self, customer, product, warehouse, quantity, price):
+#         # We wrap this in an atomic transaction to prevent race conditions
+#         with transaction.atomic():
+#             # 1. Get or Create a Pending Sales Order for this customer
+#             from .models import SalesOrder, Stock
             
-            return item
+#             sales_order, created = SalesOrder.objects.get_or_create(
+#                 customer=customer,
+#                 order_status='Pending',
+#                 defaults={'payment_status': 'Unpaid'}
+#             )
+
+#             # 2. Validate Stock availability
+#             try:
+#                 inventory_record = Stock.objects.select_for_update().get(
+#                     product=product, 
+#                     warehouse=warehouse
+#                 )
+#                 if inventory_record.quantity < quantity:
+#                     raise ValidationError(f"Insufficient stock. {inventory_record.quantity} available.")
+#             except Stock.DoesNotExist:
+#                 raise ValidationError("No inventory record found for this product/warehouse.")
+
+#             # 3. Check if this product already exists in the pending order
+#             # We use select_for_update to lock the row for the increment
+#             sales_item, item_created = self.get_queryset().select_for_update().get_or_create(
+#                 sale_order=sales_order,
+#                 product_name=product,
+#                 source_whouse=warehouse,
+#                 status='Pending',
+#                 defaults={
+#                     'quantity': quantity,
+#                     'price': price,
+#                     'inventory': inventory_record,
+#                 }
+#             )
+
+#             if not item_created:
+#                 # 4. Increment quantity if item already exists
+#                 sales_item.quantity += quantity
+#                 # Optionally update the price to the latest one provided
+#                 sales_item.price = price 
+#                 sales_item.save()
+            
+#             return sales_item

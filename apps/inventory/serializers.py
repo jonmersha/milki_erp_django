@@ -1,167 +1,66 @@
 from rest_framework import serializers
-from .models import Warehouse, ProductPackage, Product, Stock, InventoryMovementLog, StockTransfer
-from django.conf import settings
-# -----------------------------
-# Warehouse
-# -----------------------------
+from .models import Warehouse, Product, Stock, InventoryMovementLog, StockTransfer
+
 class WarehouseSerializer(serializers.ModelSerializer):
+    factory_name = serializers.ReadOnlyField(source='factory.name')
+
     class Meta:
         model = Warehouse
         fields = [
-            'id', 'factory', 'name', 'description', 'location',
-            'capacity', 'status', 'created_at', 'updated_at'
+            'tracker', 'name', 'factory', 'factory_name', 
+            'location', 'capacity', 'status', 'description'
         ]
+        read_only_fields = ['tracker']
 
-# -----------------------------
-# ProductPackage
-# -----------------------------
-class ProductPackageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductPackage
-        fields = [
-            'id',
-            'name',
-            'description',
-            'size',
-            'dimensions',
-            'weight',
-        ]
-        read_only_fields = ['id']
-
-    def create(self, validated_data):
-        return ProductPackage.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
-
-# -----------------------------
-# Product
-# -----------------------------
 class ProductSerializer(serializers.ModelSerializer):
-    package_name = serializers.CharField(source='package.name', read_only=True)
-    company_name = serializers.CharField(source='company.name', read_only=True)
+    company_name = serializers.ReadOnlyField(source='company.name')
 
     class Meta:
         model = Product
         fields = [
-            'id',
-            'name',
-            'description',
-            'unit_price',
-            'unit_of_measure',
-            'package',
-            'package_name',
-            'status',
-            'company',
-            'company_name',
+            'tracker', 'name', 'unit_price', 'unit_of_measure', 
+            'status', 'company', 'company_name', 'description'
         ]
-        read_only_fields = ['id']
-
-    def create(self, validated_data):
-        return Product.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
-# -----------------------------
-# Stock
-# -----------------------------
-class PRD(serializers.ModelSerializer):
-    class Meta:
-        model=Product
-        fields=['id', 'name', 'description', 'unit_price']
+        read_only_fields = ['tracker']
 
 class StockSerializer(serializers.ModelSerializer):
-    d =PRD(read_only=True)
-    # warehouse=WarehouseSerializer()
+    product_name = serializers.ReadOnlyField(source='product.name')
+    warehouse_name = serializers.ReadOnlyField(source='warehouse.name')
+    unit_of_measure = serializers.ReadOnlyField(source='product.unit_of_measure')
+
     class Meta:
         model = Stock
         fields = [
-            'id', 'd','product', 'warehouse', 'quantity', 'last_updated',
-            'remarks', 'locked_amount', 'unit_price', 'total_value',
-            'minimum_threshold', 'created_at', 'updated_at'
+            'tracker', 'product', 'product_name', 'warehouse', 
+            'warehouse_name', 'quantity', 'locked_amount', 
+            'unit_price', 'total_value', 'unit_of_measure'
         ]
-
-# -----------------------------
-# InventoryMovement
-# -----------------------------
-
+        read_only_fields = ['tracker', 'total_value']
 
 class InventoryMovementLogSerializer(serializers.ModelSerializer):
-    # Read-only helper fields for human-friendly display
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    source_warehouse_name = serializers.CharField(
-        source='source_warehouse.name', read_only=True
-    )
-    destination_warehouse_name = serializers.CharField(
-        source='destination_warehouse.name', read_only=True
-    )
+    product_name = serializers.ReadOnlyField(source='product.name')
+    source_name = serializers.ReadOnlyField(source='source_warehouse.name')
+    destination_name = serializers.ReadOnlyField(source='destination_warehouse.name')
 
     class Meta:
         model = InventoryMovementLog
         fields = [
-            'id',
-            'product', 'product_name',
-            'date', 'quantity',
-            'movement_type', 'reason',
-            'source_warehouse', 'source_warehouse_name',
-            'destination_warehouse', 'destination_warehouse_name',
-            'unit_price', 'remarks',
-            'status', 'created_at', 'updated_at'
+            'tracker', 'product', 'product_name', 'quantity', 
+            'movement_type', 'reason', 'source_warehouse', 'source_name',
+            'destination_warehouse', 'destination_name', 'date'
         ]
-        read_only_fields = ['id', 'date', 'created_at', 'updated_at']
+        read_only_fields = ['tracker', 'date']
 
-    def validate(self, data):
-        """
-        Validate movement logic consistency:
-        - Outbound requires a source warehouse.
-        - Inbound requires a destination warehouse.
-        - Transfer requires both.
-        """
-        movement_type = data.get('movement_type')
-        reason = data.get('reason')
-        source = data.get('source_warehouse')
-        destination = data.get('destination_warehouse')
-
-        if movement_type == 'outbound' and not source:
-            raise serializers.ValidationError("Outbound movement requires a source warehouse.")
-
-        if movement_type == 'inbound' and not destination:
-            raise serializers.ValidationError("Inbound movement requires a destination warehouse.")
-
-        if reason == 'transfer':
-            if not source or not destination:
-                raise serializers.ValidationError("Transfer movements require both source and destination warehouses.")
-            if source == destination:
-                raise serializers.ValidationError("Source and destination warehouses must be different.")
-
-        if data.get('quantity', 0) <= 0:
-            raise serializers.ValidationError("Quantity must be greater than zero.")
-
-        return data
-
-
-
-#--------------------------------------
-#Stock Transfer Serilaizr
-#-----------------------------------------
 class StockTransferSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source="product.name", read_only=True)
-    source_warehouse_name = serializers.CharField(source="source_warehouse.name", read_only=True)
-    destination_warehouse_name = serializers.CharField(source="destination_warehouse.name", read_only=True)
+    product_name = serializers.ReadOnlyField(source='product.name')
+    source_name = serializers.ReadOnlyField(source='source_warehouse.name')
+    destination_name = serializers.ReadOnlyField(source='destination_warehouse.name')
 
     class Meta:
         model = StockTransfer
         fields = [
-            'id', 'product', 'product_name',
-            'source_warehouse', 'source_warehouse_name',
-            'destination_warehouse', 'destination_warehouse_name',
-            'quantity',  'status',
-            'remarks', 'created_at', 'updated_at'
+            'tracker', 'product', 'product_name', 'source_warehouse', 
+            'source_name', 'destination_warehouse', 'destination_name', 
+            'quantity', 'status'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['tracker']
