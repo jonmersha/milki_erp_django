@@ -102,8 +102,8 @@ WSGI_APPLICATION = 'main.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'cafe6',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'milki7',
         'HOST': 'localhost',
         'USER': 'storeuser',
         'PASSWORD': 'Yohannes@123321'
