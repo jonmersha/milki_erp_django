@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from .models import Supplier, PurchaseOrder, PurchaseOrderItem, GoodsReceivingNote
-
+from django.apps import apps
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
         fields = [
+            'id',
             'tracker',
             'name',
             'contact_person',
@@ -18,7 +19,7 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PurchaseOrderItem
-        fields = ['tracker', 'purchase_order', 'product', 'product_name', 'quantity', 'unit_price', 'status']
+        fields = ['id','tracker', 'purchase_order', 'product', 'product_name', 'quantity', 'unit_price', 'status']
         read_only_fields = ['tracker']
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
@@ -29,7 +30,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrder
-        fields = ['tracker', 'supplier', 'supplier_name', 'destination_store', 'warehouse_name', 'order_date', 'status', 'items']
+        fields = ['id','tracker', 'supplier', 'supplier_name', 'destination_store', 'warehouse_name', 'order_date', 'status', 'items']
         read_only_fields = ['tracker', 'order_date']
 
 # Specialized Serializer for the Add Item logic

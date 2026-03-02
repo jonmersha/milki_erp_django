@@ -7,7 +7,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
         fields = [
-            'tracker', 'name', 'factory', 'factory_name', 
+            'id', 'tracker', 'name', 'factory', 'factory_name', 
             'location', 'capacity', 'status', 'description'
         ]
         read_only_fields = ['tracker']
@@ -18,7 +18,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'tracker', 'name', 'unit_price', 'unit_of_measure', 
+            'id', 'tracker', 'name', 'unit_price', 'unit_of_measure', 
             'status', 'company', 'company_name', 'description'
         ]
         read_only_fields = ['tracker']

@@ -18,8 +18,11 @@ ALLOWED_HOSTS = [
     'm.besheger.com',
     'www.m.besheger.com',
     'localhost',
+    '192.168.8.53',
     '127.0.0.1',
     '192.168.1.6',
+    '10.187.243.239',
+    '10.213.244.239',
     '10.11.246.192',
     '10.0.0.1',
      '::1' # optional if you also use the www subdomain
@@ -76,7 +79,7 @@ ROOT_URLCONF = 'main.urls'
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [
-    BASE_DIR / "frontend" / "dist",
+    BASE_DIR / "frontend" / "dist" / "static",
 ]
 
 TEMPLATES = [
@@ -103,7 +106,7 @@ WSGI_APPLICATION = 'main.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'milki9',
+        'NAME': 'milki10',
         'HOST': 'localhost',
         'USER': 'storeuser',
         'PASSWORD': 'Yohannes@123321'
@@ -155,7 +158,7 @@ STATICFILES_DIRS = [
 # STATIC_ROOT = BASE_DIR / 'staticfiles'   # collected static files
 # STATICFILES_DIRS = [
 #     BASE_DIR / 'static',   # your custom static folder
-# ]
+# ] 
 
 
 # Default primary key field type

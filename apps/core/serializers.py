@@ -12,7 +12,7 @@ class CitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = City
-        fields = ['tracker', 'name', 'admin_region', 'region_name', 'description', 'status']
+        fields = ['id','tracker', 'name', 'admin_region', 'region_name', 'description', 'status']
         read_only_fields = ['tracker']
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -23,7 +23,7 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = [
+        fields = ['id',
             'tracker', 'name', 'city', 'city_name', 
             'logo', 'banner', 'description', 'status'
         ]
@@ -37,7 +37,7 @@ class FactorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Factory
         fields = [
-            'tracker', 'name', 'company', 'company_name', 
+           'id', 'tracker', 'name', 'company', 'company_name', 
             'city', 'city_name', 'capacity', 'description', 'status'
         ]
         read_only_fields = ['tracker']
