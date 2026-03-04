@@ -4,7 +4,7 @@ from .models import AdminRegion, City, Company, Factory
 class AdminRegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminRegion
-        fields = ['tracker', 'name', 'status']
+        fields = ['id','tracker', 'name', 'status']
         read_only_fields = ['tracker']
 
 class CitySerializer(serializers.ModelSerializer):

@@ -4,10 +4,6 @@ from django.core.exceptions import ValidationError
 
 from .serializers import AddSalesItemSerializer, CustomerSerializer, SalesItemSerializer, SalesOrderSerializer, SalesTransactionSerializer
 from .models import Customer, SalesOrder, SalesItem, SalesTransaction
-# from .serializers import (
-#     CustomerSerializer, SalesOrderSerializer, 
-#     SalesItemSerializer, SalesTransactionSerializer, AddSalesItemSerializer
-# )
 
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('-id')
