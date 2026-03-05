@@ -20,7 +20,7 @@ from apps.core.views import (
 from main.views import FrontendAppView
 from apps.sales.views import CustomerViewSet, SalesOrderViewSet, SalesItemViewSet, SalesTransactionViewSet
 # PURCHASE
-from apps.purchase.views import PurchaseOrderViewSet, PurchaseOrderItemViewSet, SupplierViewSet
+from apps.purchase.views import   PurchaseOrderViewSet, PurchaseOrderItemViewSet, SupplierViewSet
     
 # INVENTORY
 from apps.inventory.views import (
@@ -67,7 +67,8 @@ purchase_router.register(r'order-items', PurchaseOrderItemViewSet, basename='pur
 purchase_router.register(r'suppliers', SupplierViewSet, basename='suppliers')
 # #godds receiving notes
 # goods_router = DefaultRouter()
-# goods_router.register(r'grns', GoodsReceivingNoteViewSet, basename='grns')
+# goods_router.register(r'grns', GoodsReceivingNoteViewSet, basename='grn')
+# goods_router.register(r'grn-items', GRNItemViewSet, basename='grn-items')
 # goods_router.register(r'grn-items', GRNItemViewSet, basename='grn-items')
 
 # INVENTORY routes
@@ -104,6 +105,7 @@ urlpatterns = [
     path('core/', include(core_router.urls)),           # /core/companies/
     path('sales/', include(sales_router.urls)),         # /sales/orders/
     path('purchase/', include(purchase_router.urls)),   # /purchase/orders/
+    # path('goods/', include(goods_router.urls)),         # /goods/grns/
     path('inventory/', include(inventory_router.urls)), # /inventory/products/
     path('users/', include(users_router.urls)),         # /users/users/
 

@@ -64,3 +64,39 @@ class StockTransferSerializer(serializers.ModelSerializer):
             'quantity', 'status'
         ]
         read_only_fields = ['tracker']
+
+
+
+class StockInWarehouseSerializer(serializers.ModelSerializer):
+    """
+    Shows individual product levels inside a specific warehouse.
+    """
+    product_name = serializers.ReadOnlyField(source='product.name')
+    product_unit = serializers.ReadOnlyField(source='product.unit_of_measure')
+    # total_value is calculated in the model's save() method
+    
+    class Meta:
+        model = Stock
+        fields = [
+            'tracker', 'product_name', 'product_unit', 
+            'quantity', 'unit_price', 'total_value'
+        ]
+
+class WarehouseListSerializer(serializers.ModelSerializer):
+    """
+    The main serializer for the Flutter Warehouse List Page.
+    """
+    # This 'stocks' field matches the related_name in your Stock model
+    stocks = StockInWarehouseSerializer(many=True, read_only=True)
+    total_warehouse_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Warehouse
+        fields = [
+            'id', 'tracker', 'name', 'location', 
+            'capacity', 'status', 'stocks', 'total_warehouse_value'
+        ]
+
+    def get_total_warehouse_value(self, obj):
+        # Sums up the financial value of everything in this specific building
+        return sum(stock.total_value or 0 for stock in obj.stocks.all())

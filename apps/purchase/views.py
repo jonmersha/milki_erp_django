@@ -1,57 +1,18 @@
-# from rest_framework import viewsets, status
-# from rest_framework.response import Response
-# from .models import Supplier, PurchaseOrder, PurchaseOrderItem
-# from .serializers import (
-#     SupplierSerializer, PurchaseOrderSerializer, 
-#     PurchaseOrderItemSerializer, AddPurchaseItemSerializer
-# )
-
-# class SupplierViewSet(viewsets.ModelViewSet):
-#     queryset = Supplier.objects.all()
-#     serializer_class = SupplierSerializer
-#     lookup_field = 'tracker'
-
-# class PurchaseOrderViewSet(viewsets.ModelViewSet):
-#     # Use prefetch_related to load items efficiently in one query
-#     queryset = PurchaseOrder.objects.all().prefetch_related('items')
-#     serializer_class = PurchaseOrderSerializer
-#     lookup_field = 'tracker'
-
-# class PurchaseOrderItemViewSet(viewsets.ModelViewSet):
-#     queryset = PurchaseOrderItem.objects.all()
-#     serializer_class = PurchaseOrderItemSerializer
-#     lookup_field = 'tracker'
-
-#     def create(self, request, *args, **kwargs):
-#         """
-#         Overrides the default create to use the Manager logic
-#         defined inside the PurchaseOrder model.
-#         """
-#         serializer = AddPurchaseItemSerializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-
-#         # Utilize the manager method inside models.py
-#         item = PurchaseOrder.objects.add_item_to_order(
-#             supplier=serializer.validated_data['supplier'],
-#             warehouse=serializer.validated_data['warehouse'],
-#             product=serializer.validated_data['product'],
-#             quantity=serializer.validated_data['quantity'],
-#             unit_price=serializer.validated_data['unit_price']
-#         )
-        
-#         output_serializer = PurchaseOrderItemSerializer(item)
-#         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
-
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Sum, F
-from .models import Supplier, PurchaseOrder, PurchaseOrderItem, GoodsReceivingNote
+from .models import  GRN, GRNItem, Supplier, PurchaseOrder, PurchaseOrderItem
 from .serializers import (
-    SupplierSerializer, PurchaseOrderSerializer, 
-    PurchaseOrderItemSerializer, AddPurchaseItemSerializer,
-    GRNSerializer
+       GRNSerializer, SupplierSerializer, PurchaseOrderSerializer, 
+    PurchaseOrderItemSerializer, AddPurchaseItemSerializer
 )
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+
 
 class SupplierViewSet(viewsets.ModelViewSet):
     """
@@ -139,11 +100,26 @@ class PurchaseOrderItemViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class GRNViewSet(viewsets.ModelViewSet):
-    """
-    Handles Goods Receiving Notes.
-    """
-    queryset = GoodsReceivingNote.objects.all().order_by('-received_date')
+    queryset = GRN.objects.all()
     serializer_class = GRNSerializer
-    lookup_field = 'tracker'
+
+    def perform_create(self, serializer):
+        # Automatically tag the user who is logged in
+        serializer.save(received_by=self.request.user)
+
+    @action(detail=False, methods=['post'], url_path='post-item/(?P<pk>[^/.]+)')
+    def post_item(self, request, pk=None):
+        """
+        Plain way to add a specific item to inventory.
+        URL: /api/grn/post-item/1/
+        """
+        item = get_object_or_404(GRNItem, pk=pk)
+        
+        if item.status == 'Posted':
+            return Response({"message": "Already in stock"}, status=400)
+
+        # Trigger the stock update logic (from your model method)
+        item.post_to_inventory() 
+        
+        return Response({"status": "Success", "message": "Stock updated"})

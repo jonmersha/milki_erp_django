@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     '192.168.8.53',
     '127.0.0.1',
     '192.168.1.6',
+    '192.168.8.19',
     '10.187.243.239',
     '10.11.243.236',
     '10.213.244.239',
@@ -164,11 +165,6 @@ STATICFILES_DIRS = [
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-
-
-
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
